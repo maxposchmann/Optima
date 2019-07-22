@@ -1,14 +1,29 @@
-objects = optimaBroyden.o optima.o optimaDirectionVector.o optimaFunctionalNorm.o
-FC = gfortran
-optima: $(objects)
-	$(FC) -lblas -llapack -o optima $(objects)
-optimaBroyden.o: optimaBroyden.f90
-	$(FC) -c -Wall optimaBroyden.f90
-optimaDirectionVector.o: optimaDirectionVector.f90
-	$(FC) -c -Wall optimaDirectionVector.f90
-optima.o: optima.f90
-	$(FC) -c -Wall optima.f90
-optimaFunctionalNorm.o: optimaFunctionalNorm.f90
-	$(FC) -c -Wall optimaFunctionalNorm.f90
+EXE = $(BIN_DIR)/optima
+
+AR          = ar
+FC          = gfortran
+FCFLAGS     = -Wall -g -O0 -fno-automatic -fbounds-check -ffpe-trap=zero
+
+# links to lapack and blas libraries:
+LDLOC     =  -L/usr/lib/lapack -llapack -L/usr/lib/libblas -lblas -lgfortran
+
+# link flags for linux users:
+LDFLAGS     =  -O0 -g -fno-automatic -fbounds-check
+
+SRC = $(notdir $(wildcard $(SRC_DIR)/*.f90))
+OBJ = $(patsubst %,$(OBJ_DIR)/%,$(SRC:.f90=.o))
+
+OBJ_DIR     = obj
+BIN_DIR     = bin
+SRC_DIR     = src
+
+all: $(OBJ)
+	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) $(LDFLAGS) -o $(EXE) $(OBJ) $(LDLOC)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90
+	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) -c $< -o $@
+
 clean:
-	rm $(objects)
+	rm -f $(OBJ_DIR)/*
+	rm -f $(BIN_DIR)/*
+	rm -f $(EXE)
