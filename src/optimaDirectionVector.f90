@@ -4,14 +4,14 @@
     !
     ! DISCLAIMER
     ! ==========
-    ! 
-    ! All of the programming herein is original unless otherwise specified.  Details of contributions to the 
+    !
+    ! All of the programming herein is original unless otherwise specified.  Details of contributions to the
     ! programming are given below.
     !
     !
     ! Revisions:
     ! ==========
-    ! 
+    !
     !    Date          Programmer         Description of change
     !    ----          ----------         ---------------------
     !    09/12/2013    M.H.A. Piro        Original code
@@ -39,7 +39,7 @@
 subroutine optimaDirectionVector(m, n, f, dBroyden, x)
 
     implicit none
-    
+
     integer                :: i, j, m, n, k, INFO
     integer,dimension(n)   :: IPIV
     real(8)                :: dTempVar, lambda
@@ -52,20 +52,20 @@ subroutine optimaDirectionVector(m, n, f, dBroyden, x)
     ! Request a value of lambda from the user:
     3000 print *, 'Enter a value for lambda (default = 1):'
     read *, lambda
-    
+
     if (lambda < 0D0) then
         print *, 'Lambda must be positive. '
         print *
         go to 3000
     end if
-    
+
     ! Initialize variables:
     INFO     = 0
     IPIV     = 0
     A        = 0D0
     B        = 0D0
     dTempVar = 0D0
-    
+
     ! Compute the (J^T J) matrix:
     do j = 1, n
         do i = j, n
@@ -73,30 +73,30 @@ subroutine optimaDirectionVector(m, n, f, dBroyden, x)
             do k = 1, m
                 dTempVar = dTempVar + dBroyden(k,i) * dBroyden(k,j)
             end do
-            
+
             ! Compute the coefficient for the A matrix:
             A(i,j) = dTempVar
-            
+
             ! Apply symmetry:
             A(j,i) = dTempVar
         end do
     end do
-    
+
     ! Compute the right hand side vector:
     do j = 1, n
-        do i = 1, m 
+        do i = 1, m
             B(j) = B(j) + dBroyden(i,j) * f(i)
-        end do 
+        end do
         A(j,j) = A(j,j) + lambda
     end do
-    
+
     ! Call the linear equation solver:
-    call DGESV( n, 1, A, n, IPIV, B, n, INFO )  
+    call DGESV( n, 1, A, n, IPIV, B, n, INFO )
 
     ! Check if there were any errors with the linear equation solver:
     if (INFO == 0) then
         ! Successful calculation.
-        
+
         3010 print *, 'Enter a steplength (0 < alpha >= 1):'
         read *, dTempVar
         print *
@@ -107,23 +107,23 @@ subroutine optimaDirectionVector(m, n, f, dBroyden, x)
             print *
             goto 3010
         end if
-        
+
         ! Print results to screen:
         print *, 'Index | direction vector | new values:'
-        print * 
+        print *
         do j = 1, n
             !print *, j, B(j)
             print *, j, B(j), x(j) + dTempVar * B(j)
         end do
-        print *  
+        print *
     else
         ! Unsuccessful exit.  Report an error and stop.
         print *, 'There was a problem in solving the system of linear equations. '
         print *, 'Error code = ', INFO
         print *
-        stop  
+        stop
     end if
 
     return
-    
+
 end subroutine optimaDirectionVector

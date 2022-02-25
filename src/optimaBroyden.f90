@@ -4,14 +4,14 @@
     !
     ! DISCLAIMER
     ! ==========
-    ! 
-    ! All of the programming herein is original unless otherwise specified.  Details of contributions to the 
+    !
+    ! All of the programming herein is original unless otherwise specified.  Details of contributions to the
     ! programming are given below.
     !
     !
     ! Revisions:
     ! ==========
-    ! 
+    !
     !    Date          Programmer         Description of change
     !    ----          ----------         ---------------------
     !    09/12/2013    M.H.A. Piro        Original code
@@ -40,9 +40,9 @@
 subroutine optimaBroyden(m, n, y, s, dBroyden)
 
     implicit none
-    
-    integer                :: i, j, m, n   
-    real(8)                :: dTempVar 
+
+    integer                :: i, j, m, n
+    real(8)                :: dTempVar
     real(8),dimension(m)   :: y, dTempVec
     real(8),dimension(n)   :: s
     real(8),dimension(m,n) :: dBroyden
@@ -53,13 +53,13 @@ subroutine optimaBroyden(m, n, y, s, dBroyden)
     dTempVec = 0D0
 
     ! Check input variables:
-    if (n > m) then        
+    if (n > m) then
         print *, 'The number of data-points must be greater than or equal to the '
-        print *, 'number of unknown parameters.  The program will hault.'
+        print *, 'number of unknown parameters.  The program will halt.'
         print *
         stop
     end if
-    
+
     ! Compute Bs:
     do j = 1, n
         do i = 1, m
@@ -71,7 +71,7 @@ subroutine optimaBroyden(m, n, y, s, dBroyden)
     do j = 1, n
         dTempVar = dTempVar + s(j)**2
     end do
-    
+
     ! Make sTs multiplicative:
     dTempVar = 1D0 / dTempVar
 
@@ -88,5 +88,5 @@ subroutine optimaBroyden(m, n, y, s, dBroyden)
     end do
 
     return
-    
+
 end subroutine optimaBroyden
