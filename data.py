@@ -1,6 +1,8 @@
 import os
 import re
 import PySimpleGUI as sg
+import shutil
+import subprocess
 
 timeout = 50
 inputSize = 16
@@ -22,10 +24,24 @@ sg.theme_add_new('OntarioTech', {'BACKGROUND': futureBlue,
 sg.theme('OntarioTech')
 
 class TagWindow:
-    def __init__(self,tags):
+    def __init__(self,datafile):
         windowList.append(self)
+        self.datafile = datafile
+        self.tags = []
+
+        with open(datafile) as f:
+            data = f.readlines()
+            for line in data:
+                self.tags.extend(re.findall('<([^>]*)>', line))
+
+        if self.tags == []:
+            print('No tags found')
+            self.close()
+
+        self.tags = list(dict.fromkeys(self.tags))
+
         tagMaxLength = 3
-        for tag in tags:
+        for tag in self.tags:
             tagMaxLength = max(tagMaxLength,len(tag))
         headingLayout = [[
                           sg.Text('Tag',   size = [tagMaxLength,1],justification='left'),
@@ -33,13 +49,14 @@ class TagWindow:
                           sg.Text('Initial Value 2',size = [inputSize,1],justification='center')
                         ]]
         tagsLayout = []
-        for tag in tags:
+        for tag in self.tags:
             tagsLayout.append([[
                                 sg.Text(tag,size = [tagMaxLength,1],justification='left'),
                                 sg.Input(key = f'{tag}-in1',size = [inputSize,1]),
                                 sg.Input(key = f'{tag}-in2',size = [inputSize,1])
                              ]])
-        self.sgw = sg.Window('Coefficients', [headingLayout,tagsLayout], location = [400,0], finalize=True)
+        buttonLayout = [[sg.Button('Make datafile')]]
+        self.sgw = sg.Window('Coefficients', [headingLayout,tagsLayout,buttonLayout], location = [400,0], finalize=True)
         self.children = []
     def close(self):
         for child in self.children:
@@ -51,19 +68,17 @@ class TagWindow:
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
+        if event == 'Make datafile':
+            shutil.copy(self.datafile,'optima.dat')
+            for tag in self.tags:
+                key = f'{tag}-in1'
+                subprocess.call(['sed', '-i', '-e',  f's/<{tag}>/{values[key]}/g', 'optima.dat'])
+            self.close()
 
-tags = []
 datafile = 'kayetest.dat'
-with open(datafile) as f:
-    data = f.readlines()
-    for line in data:
-        tags.extend(re.findall('<([^>]*)>', line))
-
-if tags == []:
-    sys.exit('No tags found')
 
 windowList = []
-TagWindow(tags)
+TagWindow(datafile)
 while len(windowList) > 0:
     for window in windowList:
         window.read()
