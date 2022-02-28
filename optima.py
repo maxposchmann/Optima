@@ -54,10 +54,6 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
 
     # Call the linear equation solver:
     try:
-        print('a')
-        print(a)
-        print('b')
-        print(b)
         x = np.linalg.lstsq(a,b,rcond=None)
         # Print results to screen:
         for j in range(n):
@@ -94,9 +90,6 @@ print(res)
 
 # Update the Broyden matrix:
 broyden(dBroyden, y, s)
-print(dBroyden)
-print(f)
-print(x)
 # Compute the direction vector:
 directionVector(f, dBroyden, x, 1, 1)
 
