@@ -61,38 +61,39 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
 
-dBroyden = np.ones([3,1])
+broydenMatrix = np.ones([3,1])
 
-dDependent = np.array([0.25, 0.5, 0.75])
+y = np.array([0.25, 0.5, 0.75])
 
-s = np.array([1])
+beta = np.array([1])
+betaOld = beta
 
 f = np.array([0.4, 0.45, 0.8])
 
-f = f - dDependent
-y = f
+r = f - y
+rOld = r
 
 # Compute the functional norm:
-res = functionalNorm(f)
-print(res)
+norm = functionalNorm(r)
+print(norm)
 
-x = np.array([1.01])
+beta = np.array([1.01])
 
-s = x - s
+s = beta - betaOld
 
-f = [0.36, 0.47, 0.79]
-f = f - dDependent
-y = y - f
+f = np.array([0.36, 0.47, 0.79])
+r = f - y
+t = r - rOld
 
 # Compute the functional norm:
-res = functionalNorm(f)
-print(res)
+norm = functionalNorm(r)
+print(norm)
 
 # Update the Broyden matrix:
-broyden(dBroyden, y, s)
+broyden(broydenMatrix, t, s)
 # Compute the direction vector:
-directionVector(f, dBroyden, x, 1, 1)
+directionVector(-r, broydenMatrix, beta, 1, 1)
 
 # Update vectors for succeeding iteration:
-s = x
-y = f
+betaOld = beta
+rOld = r
