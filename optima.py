@@ -83,7 +83,7 @@ s = beta - betaOld
 
 f = np.array([0.36, 0.47, 0.79])
 r = f - y
-t = r - rOld
+t = rOld - r
 
 # Compute the functional norm:
 norm = functionalNorm(r)
@@ -92,7 +92,7 @@ print(norm)
 # Update the Broyden matrix:
 broyden(broydenMatrix, t, s)
 # Compute the direction vector:
-directionVector(-r, broydenMatrix, beta, 1, 1)
+directionVector(r, broydenMatrix, beta, 1, 1)
 
 # Update vectors for succeeding iteration:
 betaOld = beta
