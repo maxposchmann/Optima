@@ -182,7 +182,7 @@ program optima
 
         ! Update new estimates of the coefficients:
         do i = 1, n
-            x(i) = dTempVec(i)
+            ! x(i) = dTempVec(i)
             s(i) = x(i) - s(i)
         end do
         dTempVec = 0D0
@@ -215,7 +215,6 @@ program optima
 
         ! Update the Broyden matrix:
         call optimaBroyden(m, n, y, s, dBroyden)
-
         ! Compute the direction vector:
         call optimaDirectionVector(m, n, f, dBroyden, x)
 
