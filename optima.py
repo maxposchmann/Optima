@@ -125,7 +125,12 @@ class Optima:
         self.maxIts = 300
         self.datafile = 'fcctest.dat'
         windowList.append(self)
-        self.sgw = sg.Window('Optima', [[[sg.Button('Edit Coefficients')],[sg.Button('Edit Validation Data')],[sg.Button('Run')]]], location = [0,0], finalize=True)
+        buttonLayout = [[sg.Button('Edit Coefficients')],
+                        [sg.Button('Add Validation Data')],
+                        [sg.Button('Remove Validation Data')],
+                        [sg.Button('Edit Validation Data')],
+                        [sg.Button('Run')]]
+        self.sgw = sg.Window('Optima', [buttonLayout], location = [0,0], finalize=True)
         self.children = []
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
         self.children.append(self.tagWindow)
