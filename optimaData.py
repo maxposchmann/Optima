@@ -14,6 +14,7 @@ class TagWindow:
         self.datafile = datafile
         self.tags = []
         self.initialValues = []
+        self.valid = False
 
         with open(datafile) as f:
             data = f.readlines()
@@ -59,4 +60,5 @@ class TagWindow:
             for tag in self.tags:
                 key = f'{tag}-in1'
                 self.initialValues.append(values[key])
+            self.valid = True
             self.close()
