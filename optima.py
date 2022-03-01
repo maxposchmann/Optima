@@ -5,6 +5,7 @@ import PySimpleGUI as sg
 import shutil
 import subprocess
 import json
+import optimaData
 
 timeout = 50
 inputSize = 16
@@ -99,85 +100,94 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
 
-tol = 1e-4
-maxIts = 300
+class Optima:
+    def __init__(self):
+        self.tol = 1e-4
+        self.maxIts = 300
+    def run(self):
+        broydenMatrix = np.ones([6,2])
 
-broydenMatrix = np.ones([6,2])
+        y = np.array([-1.5318396900905138E+003,
+                      -2.1601132664119210E+004,
+                      -4.6885671070912082E+004,
+                      -7.5678723908701446E+004,
+                      -1.0721653913730988E+005,
+                      -1.4109338905291763E+005])
 
-y = np.array([-1.5318396900905138E+003,
-              -2.1601132664119210E+004,
-              -4.6885671070912082E+004,
-              -7.5678723908701446E+004,
-              -1.0721653913730988E+005,
-              -1.4109338905291763E+005])
+        beta = np.array([1,1])
+        betaOld = beta
 
-beta = np.array([1,1])
-betaOld = beta
+        shutil.copy('fcctest.dat','optima.dat')
+        subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
+        subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
+        subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
 
-shutil.copy('fcctest.dat','optima.dat')
-subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
-subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
-subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
+        jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
+        try:
+            data = json.load(jsonFile)
+            jsonFile.close()
+        except:
+            jsonFile.close()
+            print('Data load failed')
 
-jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
-try:
-    data = json.load(jsonFile)
-    jsonFile.close()
-except:
-    jsonFile.close()
-    print('Data load failed')
+        f = np.zeros(6)
+        for i in list(data.keys()):
+            f[int(i)-1] = data[i]['integral Gibbs energy']
 
-f = np.zeros(6)
-for i in list(data.keys()):
-    f[int(i)-1] = data[i]['integral Gibbs energy']
+        # f = np.array([0.4, 0.45, 0.8])
 
-# f = np.array([0.4, 0.45, 0.8])
+        r = f - y
+        rOld = r
 
-r = f - y
-rOld = r
+        # Compute the functional norm:
+        norm = functionalNorm(r)
 
-# Compute the functional norm:
-norm = functionalNorm(r)
+        beta = np.array([1.01,0.99])
 
-beta = np.array([1.01,0.99])
+        for n in range(maxIts):
+            shutil.copy('fcctest.dat','optima.dat')
+            subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
+            subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
+            subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
 
-for n in range(maxIts):
-    shutil.copy('fcctest.dat','optima.dat')
-    subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
-    subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
-    subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
+            jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
+            try:
+                data = json.load(jsonFile)
+                jsonFile.close()
+            except:
+                jsonFile.close()
+                print('Data load failed')
 
-    jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
-    try:
-        data = json.load(jsonFile)
-        jsonFile.close()
-    except:
-        jsonFile.close()
-        print('Data load failed')
+            f = np.zeros(6)
+            for i in list(data.keys()):
+                f[int(i)-1] = data[i]['integral Gibbs energy']
 
-    f = np.zeros(6)
-    for i in list(data.keys()):
-        f[int(i)-1] = data[i]['integral Gibbs energy']
+            s = beta - betaOld
+            r = f - y
+            t = rOld - r
 
-    s = beta - betaOld
-    r = f - y
-    t = rOld - r
+            # Update vectors for succeeding iteration:
+            betaOld = beta
+            rOld = r
 
-    # Update vectors for succeeding iteration:
-    betaOld = beta
-    rOld = r
+            # Compute the functional norm:
+            norm = functionalNorm(r)
+            print(norm)
+            if norm < tol:
+                print(f'{beta} after {n+1}')
+                break
 
-    # Compute the functional norm:
-    norm = functionalNorm(r)
-    print(norm)
-    if norm < tol:
-        print(f'{beta} after {n+1}')
-        break
+            # Update the Broyden matrix:
+            broyden(broydenMatrix, t, s)
+            # Compute the direction vector:
+            l = 1/(n+1)**2
+            steplength = 1
+            beta = directionVector(r, broydenMatrix, beta, l, steplength)
+            print(beta)
 
-    # Update the Broyden matrix:
-    broyden(broydenMatrix, t, s)
-    # Compute the direction vector:
-    l = 1/(n+1)**2
-    steplength = 1
-    beta = directionVector(r, broydenMatrix, beta, l, steplength)
-    print(beta)
+windowList = []
+datafile = 'fcctest.dat'
+tagwindow = optimaData.TagWindow(datafile,windowList)
+while len(windowList) > 0:
+    for window in windowList:
+        window.read()
