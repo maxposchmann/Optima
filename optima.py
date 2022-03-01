@@ -90,20 +90,19 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
 
     # Call the linear equation solver:
     try:
-        x = np.linalg.lstsq(a,b,rcond=None)
+        [x, residuals, rank, s] = np.linalg.lstsq(a,b,rcond=None)
         betaNew = np.zeros(n)
         # Print results to screen:
         for j in range(n):
-            print(f'{j} {x[j]} {coefficient[j] + steplength * x[j]}')
             betaNew[j] = coefficient[j] + steplength * x[j]
         return betaNew
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
 
-tol = 1e-3
-maxIts = 10
+tol = 1e-4
+maxIts = 300
 
-broydenMatrix = np.ones([6,1])
+broydenMatrix = np.ones([6,2])
 
 y = np.array([-1.5318396900905138E+003,
               -2.1601132664119210E+004,
@@ -112,11 +111,12 @@ y = np.array([-1.5318396900905138E+003,
               -1.0721653913730988E+005,
               -1.4109338905291763E+005])
 
-beta = np.array([1])
+beta = np.array([1,1])
 betaOld = beta
 
 shutil.copy('fcctest.dat','optima.dat')
 subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
+subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
 subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
 
 jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
@@ -131,7 +131,6 @@ f = np.zeros(6)
 for i in list(data.keys()):
     f[int(i)-1] = data[i]['integral Gibbs energy']
 
-print(f)
 # f = np.array([0.4, 0.45, 0.8])
 
 r = f - y
@@ -139,13 +138,13 @@ rOld = r
 
 # Compute the functional norm:
 norm = functionalNorm(r)
-print(norm)
 
-beta = np.array([1.01])
+beta = np.array([1.01,0.99])
 
 for n in range(maxIts):
     shutil.copy('fcctest.dat','optima.dat')
     subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
+    subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
     subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
 
     jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
@@ -160,8 +159,6 @@ for n in range(maxIts):
     for i in list(data.keys()):
         f[int(i)-1] = data[i]['integral Gibbs energy']
 
-    print(f)
-
     s = beta - betaOld
     r = f - y
     t = rOld - r
@@ -174,13 +171,13 @@ for n in range(maxIts):
     norm = functionalNorm(r)
     print(norm)
     if norm < tol:
+        print(f'{beta} after {n+1}')
         break
 
     # Update the Broyden matrix:
     broyden(broydenMatrix, t, s)
     # Compute the direction vector:
-    beta = directionVector(r, broydenMatrix, beta, 1, 1)
+    l = 1/(n+1)**2
+    steplength = 1
+    beta = directionVector(r, broydenMatrix, beta, l, steplength)
     print(beta)
-
-
-print(beta)
