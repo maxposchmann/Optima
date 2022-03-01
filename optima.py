@@ -104,8 +104,34 @@ class Optima:
     def __init__(self):
         self.tol = 1e-4
         self.maxIts = 300
+        self.datafile = 'fcctest.dat'
+        windowList.append(self)
+        self.sgw = sg.Window('Optima', [[[sg.Button('Edit Coefficients')],[sg.Button('Edit Validation Data')],[sg.Button('Run')]]], location = [0,0], finalize=True)
+        self.children = []
+        self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
+        self.children.append(self.tagWindow)
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in windowList:
+            windowList.remove(self)
+    def read(self):
+        event, values = self.sgw.read(timeout=timeout)
+        if event == sg.WIN_CLOSED or event == 'Cancel':
+            self.close()
+        if event == 'Edit Coefficients':
+            self.tagWindow.close()
+            self.tagWindow.open()
+        if event == 'Run':
+            self.run()
     def run(self):
-        broydenMatrix = np.ones([6,2])
+        if not self.tagWindow.valid:
+            print('Initial estimates for coefficients not completed')
+            return
+        m = 6
+        n = len(self.tagWindow.tags)
+        broydenMatrix = np.ones([m,n])
 
         y = np.array([-1.5318396900905138E+003,
                       -2.1601132664119210E+004,
@@ -114,12 +140,12 @@ class Optima:
                       -1.0721653913730988E+005,
                       -1.4109338905291763E+005])
 
-        beta = np.array([1,1])
+        beta = np.array(self.tagWindow.initialValues[0])
         betaOld = beta
 
         shutil.copy('fcctest.dat','optima.dat')
-        subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
-        subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
+        for i in range(n):
+            subprocess.call(['sed', '-i', '-e',  f's/<{self.tagWindow.tags[i]}>/{beta[i]}/g', 'optima.dat'])
         subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
 
         jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
@@ -142,12 +168,12 @@ class Optima:
         # Compute the functional norm:
         norm = functionalNorm(r)
 
-        beta = np.array([1.01,0.99])
+        beta = np.array(self.tagWindow.initialValues[1])
 
-        for n in range(maxIts):
+        for iteration in range(self.maxIts):
             shutil.copy('fcctest.dat','optima.dat')
-            subprocess.call(['sed', '-i', '-e',  f's/<mix 1>/{beta[0]}/g', 'optima.dat'])
-            subprocess.call(['sed', '-i', '-e',  f's/<mix 2>/{beta[1]}/g', 'optima.dat'])
+            for i in range(n):
+                subprocess.call(['sed', '-i', '-e',  f's/<{self.tagWindow.tags[i]}>/{beta[i]}/g', 'optima.dat'])
             subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
 
             jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
@@ -173,21 +199,20 @@ class Optima:
             # Compute the functional norm:
             norm = functionalNorm(r)
             print(norm)
-            if norm < tol:
-                print(f'{beta} after {n+1}')
+            if norm < self.tol:
+                print(f'{beta} after {iteration+1}')
                 break
 
             # Update the Broyden matrix:
             broyden(broydenMatrix, t, s)
             # Compute the direction vector:
-            l = 1/(n+1)**2
+            l = 1/(iteration+1)**2
             steplength = 1
             beta = directionVector(r, broydenMatrix, beta, l, steplength)
             print(beta)
 
 windowList = []
-datafile = 'fcctest.dat'
-tagwindow = optimaData.TagWindow(datafile,windowList)
+Optima()
 while len(windowList) > 0:
     for window in windowList:
         window.read()
