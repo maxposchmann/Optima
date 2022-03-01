@@ -27,6 +27,16 @@ class TagWindow:
 
         self.tags = list(dict.fromkeys(self.tags))
 
+        self.open()
+
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in self.windowList:
+            self.windowList.remove(self)
+    def open(self):
         tagMaxLength = 3
         for tag in self.tags:
             tagMaxLength = max(tagMaxLength,len(tag))
@@ -44,13 +54,6 @@ class TagWindow:
                              ]])
         buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
         self.sgw = sg.Window('Coefficients', [headingLayout,tagsLayout,buttonLayout], location = [400,0], finalize=True)
-        self.children = []
-    def close(self):
-        for child in self.children:
-            child.close()
-        self.sgw.close()
-        if self in self.windowList:
-            self.windowList.remove(self)
     def read(self):
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
