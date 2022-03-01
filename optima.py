@@ -100,6 +100,25 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
 
+def getFuntionalValues(tags, beta):
+    shutil.copy('fcctest.dat','optima.dat')
+    for i in range(len(tags)):
+        subprocess.call(['sed', '-i', '-e',  f's/<{tags[i]}>/{beta[i]}/g', 'optima.dat'])
+    subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
+
+    jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
+    try:
+        data = json.load(jsonFile)
+        jsonFile.close()
+    except:
+        jsonFile.close()
+        print('Data load failed')
+
+    f = np.zeros(6)
+    for i in list(data.keys()):
+        f[int(i)-1] = data[i]['integral Gibbs energy']
+    return f
+
 class Optima:
     def __init__(self):
         self.tol = 1e-4
@@ -143,24 +162,7 @@ class Optima:
         beta = np.array(self.tagWindow.initialValues[0])
         betaOld = beta
 
-        shutil.copy('fcctest.dat','optima.dat')
-        for i in range(n):
-            subprocess.call(['sed', '-i', '-e',  f's/<{self.tagWindow.tags[i]}>/{beta[i]}/g', 'optima.dat'])
-        subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
-
-        jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
-        try:
-            data = json.load(jsonFile)
-            jsonFile.close()
-        except:
-            jsonFile.close()
-            print('Data load failed')
-
-        f = np.zeros(6)
-        for i in list(data.keys()):
-            f[int(i)-1] = data[i]['integral Gibbs energy']
-
-        # f = np.array([0.4, 0.45, 0.8])
+        f = getFuntionalValues(self.tagWindow.tags,beta)
 
         r = f - y
         rOld = r
@@ -171,22 +173,7 @@ class Optima:
         beta = np.array(self.tagWindow.initialValues[1])
 
         for iteration in range(self.maxIts):
-            shutil.copy('fcctest.dat','optima.dat')
-            for i in range(n):
-                subprocess.call(['sed', '-i', '-e',  f's/<{self.tagWindow.tags[i]}>/{beta[i]}/g', 'optima.dat'])
-            subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
-
-            jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
-            try:
-                data = json.load(jsonFile)
-                jsonFile.close()
-            except:
-                jsonFile.close()
-                print('Data load failed')
-
-            f = np.zeros(6)
-            for i in list(data.keys()):
-                f[int(i)-1] = data[i]['integral Gibbs energy']
+            f = getFuntionalValues(self.tagWindow.tags,beta)
 
             s = beta - betaOld
             r = f - y
