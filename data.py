@@ -28,6 +28,7 @@ class TagWindow:
         windowList.append(self)
         self.datafile = datafile
         self.tags = []
+        self.initialValues = []
 
         with open(datafile) as f:
             data = f.readlines()
@@ -68,17 +69,9 @@ class TagWindow:
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
-        if event == 'Make datafile':
-            shutil.copy(self.datafile,'optima.dat')
+        if event == 'Accept':
+            self.initialValues = []
             for tag in self.tags:
                 key = f'{tag}-in1'
-                subprocess.call(['sed', '-i', '-e',  f's/<{tag}>/{values[key]}/g', 'optima.dat'])
+                self.initialValues.append(values[key])
             self.close()
-
-datafile = 'kayetest.dat'
-
-windowList = []
-TagWindow(datafile)
-while len(windowList) > 0:
-    for window in windowList:
-        window.read()
