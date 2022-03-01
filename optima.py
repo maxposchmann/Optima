@@ -11,7 +11,7 @@ def broyden(broydenMatrix,dependent,objective):
     n = len(objective)
 
     # Compute Bs:
-    update = [0 for i in range(m)]
+    update = np.zeros(m)
     for j in range(n):
         for i in range(m):
             update[i] += broydenMatrix[i][j] * objective[j]
