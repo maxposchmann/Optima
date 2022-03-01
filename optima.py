@@ -90,7 +90,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
 
     # Call the linear equation solver:
     try:
-        [x, residuals, rank, s] = np.linalg.lstsq(a,b,rcond=None)
+        [x, residuals, rank, singular] = np.linalg.lstsq(a,b,rcond=None)
         betaNew = np.zeros(n)
         # Print results to screen:
         for j in range(n):
