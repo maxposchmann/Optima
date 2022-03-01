@@ -56,9 +56,11 @@ class TagWindow:
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
         if event == 'Accept':
-            self.initialValues = []
+            self.initialValues = [[],[]]
             for tag in self.tags:
-                key = f'{tag}-in1'
-                self.initialValues.append(values[key])
+                key1 = f'{tag}-in1'
+                key2 = f'{tag}-in2'
+                self.initialValues[0].append(float(values[key1]))
+                self.initialValues[1].append(float(values[key2]))
             self.valid = True
             self.close()
