@@ -24,8 +24,9 @@ sg.theme_add_new('OntarioTech', {'BACKGROUND': futureBlue,
 sg.theme('OntarioTech')
 
 class TagWindow:
-    def __init__(self,datafile):
-        windowList.append(self)
+    def __init__(self,datafile,windowList):
+        self.windowList = windowList
+        self.windowList.append(self)
         self.datafile = datafile
         self.tags = []
         self.initialValues = []
@@ -56,15 +57,15 @@ class TagWindow:
                                 sg.Input(key = f'{tag}-in1',size = [inputSize,1]),
                                 sg.Input(key = f'{tag}-in2',size = [inputSize,1])
                              ]])
-        buttonLayout = [[sg.Button('Make datafile')]]
+        buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
         self.sgw = sg.Window('Coefficients', [headingLayout,tagsLayout,buttonLayout], location = [400,0], finalize=True)
         self.children = []
     def close(self):
         for child in self.children:
             child.close()
         self.sgw.close()
-        if self in windowList:
-            windowList.remove(self)
+        if self in self.windowList:
+            self.windowList.remove(self)
     def read(self):
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
