@@ -206,6 +206,10 @@ class Optima:
         if not self.tagWindow.valid:
             print('Initial estimates for coefficients not completed')
             return
+        if len(self.validationPoints) == 0:
+            print('Validation points not completed')
+            return
+        print(self.validationPoints)
         m = 6
         n = len(self.tagWindow.tags)
         broydenMatrix = np.ones([m,n])
