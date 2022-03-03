@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import json
 import optimaData
+import math
 
 timeout = 50
 inputSize = 16
@@ -124,6 +125,32 @@ class Optima:
         self.tol = 1e-4
         self.maxIts = 300
         self.datafile = 'fcctest.dat'
+        self.elements = []
+        # Get element names so that we can set up the calculation and windows
+        with open(self.datafile) as f:
+            f.readline() # read comment line
+            line = f.readline() # read first data line (# elements, # phases, n*# species)
+            nElements = int(line[1:5])
+            nSoln = int(line[6:10])
+            while True:
+                line = f.readline() # read the rest of the # species but don't need them)
+                if any(c.isalpha() for c in line):
+                    break
+            elLen = 25 # element names are formatted 25 wide
+            els = line # get the first line with letters in it
+            for i in range(math.ceil(nElements/3)):
+                for j in range(3):
+                    self.elements.append(els[1+j*elLen:(1+j)*elLen].strip())
+                els = f.readline() # read a line of elements (3 per line)
+                # It doesn't matter now, but this reads one more line than required
+        for el in self.elements:
+            try:
+                index = atomic_number_map.index(el)+1 # get element indices in PT (i.e. # of protons)
+            except ValueError:
+                if len(el) > 0:
+                    if el[0] != 'e':
+                        print(el+' not in list') # if the name is bogus (or e(phase)), discard
+                self.elements = list(filter(lambda a: a != el, self.elements))
         windowList.append(self)
         buttonLayout = [[sg.Button('Edit Coefficients')],
                         [sg.Button('Add Validation Data')],
