@@ -159,8 +159,10 @@ class Optima:
                         [sg.Button('Run')]]
         self.sgw = sg.Window('Optima', [buttonLayout], location = [0,0], finalize=True)
         self.children = []
+        # Automatically open a window for initial conditions
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
         self.children.append(self.tagWindow)
+        self.validationPoints = []
     def close(self):
         for child in self.children:
             child.close()
@@ -174,6 +176,30 @@ class Optima:
         if event == 'Edit Coefficients':
             self.tagWindow.close()
             self.tagWindow.open()
+        if event == 'Add Validation Data':
+            # Get the number of points to be added. This window will (should) be blocking.
+            npoints = 0
+            npointsLayout = [[sg.Text('Number of validation calculations:'),sg.Input(key = '-npoints-',size = [inputSize,1])],
+                             [sg.Button('Accept'),sg.Button('Cancel')]]
+            npointsWindow = sg.Window('Invalid value notification',npointsLayout,location=[400,0],finalize=True,keep_on_top=True)
+            while True:
+                event, values = npointsWindow.read(timeout=timeout)
+                if event == sg.WIN_CLOSED or event == 'Cancel':
+                    break
+                if event == 'Accept':
+                    try:
+                        npoints = int(values['-npoints-'])
+                        if npoints >= 0:
+                            break
+                        else:
+                            npoints = 0
+                    except ValueError:
+                        pass
+                    print('Invalid number of points')
+            npointsWindow.close()
+            if npoints > 0:
+                self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
+                self.children.append(self.pointWindow)
         if event == 'Run':
             self.run()
     def run(self):
