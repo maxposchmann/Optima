@@ -62,3 +62,36 @@ class TagWindow:
                 self.initialValues[1].append(float(values[key2]))
             self.valid = True
             self.close()
+
+
+class PointValidationWindow:
+    def __init__(self,npoints,elements,points,windowList):
+        self.windowList = windowList
+        self.windowList.append(self)
+        self.npoints = npoints
+        self.elements = elements
+        # Don't edit self.points along the way, just append to it at the end!
+        # This array will have all the previously-accumulated points in it.
+        # The plan is to allow multiple of these windows simultaneously.
+        self.points = points
+
+        self.open()
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in self.windowList:
+            self.windowList.remove(self)
+    def open(self):
+        elementHeader = [sg.Text(f'{element} Concentration',size=inputSize) for element in self.elements]
+        headerLayout = [[sg.Text('Temperature',size=inputSize),sg.Text('Pressure',size=inputSize)] + elementHeader]
+        rowLayout = [[sg.Input(key=f'-temp{i}-',size=inputSize),sg.Input(key=f'-pres{i}-',size=inputSize)] + [sg.Input(key = f'-{element}{i}-',size=inputSize) for element in self.elements] for i in range(self.npoints)]
+        buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
+        self.sgw = sg.Window('Validation Data', [headerLayout,rowLayout,buttonLayout], location = [800,0], finalize=True)
+    def read(self):
+        event, values = self.sgw.read(timeout=timeout)
+        if event == sg.WIN_CLOSED or event == 'Cancel':
+            self.close()
+        if event == 'Accept':
+            self.close()
