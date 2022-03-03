@@ -15,20 +15,15 @@ class TagWindow:
         self.tags = []
         self.initialValues = []
         self.valid = False
-
         with open(datafile) as f:
             data = f.readlines()
             for line in data:
                 self.tags.extend(re.findall('<([^>]*)>', line))
-
         if self.tags == []:
             print('No tags found')
             self.close()
-
         self.tags = list(dict.fromkeys(self.tags))
-
         self.open()
-
         self.children = []
     def close(self):
         for child in self.children:
