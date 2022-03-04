@@ -8,6 +8,7 @@ import json
 import optimaData
 import optima
 import math
+import functools
 
 timeout = 50
 inputSize = 16
@@ -153,12 +154,14 @@ class ThermochimicaOptima:
         if m == 0:
             print('Validation points not completed')
             return
+
+        # Use currying to send tags to getPointValidationValues, so we don't have to pass more stuff to Optima
+        validationFunction = functools.partial(getPointValidationValues,self.tagWindow.tags)
         # call Optima
         optima.optimize(self.validationPoints,
                         self.tagWindow.initialValues[0],
                         self.tagWindow.initialValues[1],
-                        getPointValidationValues,
-                        self.tagWindow.tags,
+                        validationFunction,
                         self.maxIts,
                         self.tol)
 

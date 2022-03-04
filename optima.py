@@ -65,7 +65,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
 
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
-def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,tags,maxIts,tol):
+def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
     # get problem dimensions
     m = len(validationPoints)
     n = len(initial0)
@@ -87,7 +87,7 @@ def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,tags
     beta = np.array(initial0)
     betaOld = beta
 
-    f = getFunctionalValuesFunction(tags,beta)
+    f = getFunctionalValuesFunction(beta)
 
     r = f - y
     rOld = r
@@ -99,9 +99,9 @@ def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,tags
     beta = np.array(initial1)
 
     for iteration in range(maxIts):
-        # calculate the functional values (using Thermochimica in this case)
+        # calculate the functional values
         # leave this call straightforward: want to be able to swap this function for any other black box
-        f = getFunctionalValuesFunction(tags,beta)
+        f = getFunctionalValuesFunction(beta)
 
         # residuals and deltas
         s = beta - betaOld
