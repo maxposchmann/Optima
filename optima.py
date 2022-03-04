@@ -64,7 +64,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         print('There was a problem in solving the system of linear equations.')
 
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
-# Any methods required to call Thermochimica (or other) should be imported from another class.\
+# Any methods required to call Thermochimica (or other) should be imported from another class.
 def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,tags,maxIts,tol):
     # get problem dimensions
     m = len(validationPoints)
