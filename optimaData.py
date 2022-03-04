@@ -89,8 +89,8 @@ class PointValidationWindow:
         self.children = []
 
         # stuff for writing input file (hardcode values for now)
-        self.datafile = 'optima.dat'
-        self.tunit = 'k'
+        self.datafile = f'{os.getcwd()}/optima.dat'
+        self.tunit = 'K'
         self.punit = 'atm'
         self.munit = 'moles'
     def close(self):
