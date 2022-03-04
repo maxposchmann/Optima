@@ -1,42 +1,4 @@
 import numpy as np
-import os
-import re
-import PySimpleGUI as sg
-import shutil
-import subprocess
-import json
-import optimaData
-import math
-
-timeout = 50
-inputSize = 16
-
-futureBlue = '#003C71'
-simcoeBlue = '#0077CA'
-techTangerine = '#E75D2A'
-coolGrey = '#A7A8AA'
-sg.theme_add_new('OntarioTech', {'BACKGROUND': futureBlue,
-                                 'TEXT': 'white',
-                                 'INPUT': 'white',
-                                 'TEXT_INPUT': 'black',
-                                 'SCROLL': coolGrey,
-                                 'BUTTON': ('white', techTangerine),
-                                 'PROGRESS': ('#01826B', '#D0D0D0'),
-                                 'BORDER': 1,
-                                 'SLIDER_DEPTH': 0,
-                                 'PROGRESS_DEPTH': 0})
-sg.theme('OntarioTech')
-
-atomic_number_map = [
-    'H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P',
-    'S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn',
-    'Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh',
-    'Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',
-    'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re',
-    'Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th',
-    'Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf','Db',
-    'Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts', 'Og'
-]
 
 def functionalNorm(residual):
     norm = 0
@@ -101,177 +63,67 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
 
-def getFuntionalValues(tags, beta):
-    shutil.copy('fcctest.dat','optima.dat')
-    for i in range(len(tags)):
-        subprocess.call(['sed', '-i', '-e',  f's/<{tags[i]}>/{beta[i]}/g', 'optima.dat'])
-    subprocess.run(['../../thermochimicastuff/thermochimica/bin/RunCalculationList','validationPoints.ti'])
-
-    jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
-    try:
-        data = json.load(jsonFile)
-        jsonFile.close()
-    except:
-        jsonFile.close()
-        print('Data load failed')
-
-    m = len(beta)
-    f = np.zeros(m)
-    for i in list(data.keys()):
-        f[int(i)-1] = data[i]['integral Gibbs energy']
-    return f
-
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
-# Any methods required to call Thermochimica (or other) should be imported from another class.
-# TODO: actually follow my own design principles.
-class Optima:
-    def __init__(self):
-        self.tol = 1e-4
-        self.maxIts = 300
-        self.datafile = 'fcctest.dat'
-        self.elements = []
-        # Get element names so that we can set up the calculation and windows
-        # TODO: move this to another class
-        with open(self.datafile) as f:
-            f.readline() # read comment line
-            line = f.readline() # read first data line (# elements, # phases, n*# species)
-            nElements = int(line[1:5])
-            nSoln = int(line[6:10])
-            while True:
-                line = f.readline() # read the rest of the # species but don't need them)
-                if any(c.isalpha() for c in line):
-                    break
-            elLen = 25 # element names are formatted 25 wide
-            els = line # get the first line with letters in it
-            for i in range(math.ceil(nElements/3)):
-                for j in range(3):
-                    self.elements.append(els[1+j*elLen:(1+j)*elLen].strip())
-                els = f.readline() # read a line of elements (3 per line)
-                # It doesn't matter now, but this reads one more line than required
-        for el in self.elements:
-            try:
-                index = atomic_number_map.index(el)+1 # get element indices in PT (i.e. # of protons)
-            except ValueError:
-                if len(el) > 0:
-                    if el[0] != 'e':
-                        print(el+' not in list') # if the name is bogus (or e(phase)), discard
-                self.elements = list(filter(lambda a: a != el, self.elements))
-        windowList.append(self)
-        buttonLayout = [[sg.Button('Edit Coefficients')],
-                        [sg.Button('Add Validation Data')],
-                        [sg.Button('Remove Validation Data')],
-                        [sg.Button('Edit Validation Data')],
-                        [sg.Button('Run')]]
-        self.sgw = sg.Window('Optima', [buttonLayout], location = [0,0], finalize=True)
-        self.children = []
-        # Automatically open a window for initial conditions
-        self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
-        self.children.append(self.tagWindow)
-        self.validationPoints = []
-    def close(self):
-        for child in self.children:
-            child.close()
-        self.sgw.close()
-        if self in windowList:
-            windowList.remove(self)
-    def read(self):
-        event, values = self.sgw.read(timeout=timeout)
-        if event == sg.WIN_CLOSED or event == 'Cancel':
-            self.close()
-        if event == 'Edit Coefficients':
-            self.tagWindow.close()
-            self.tagWindow.open()
-        if event == 'Add Validation Data':
-            # Get the number of points to be added. This window will (should) be blocking.
-            npoints = 0
-            npointsLayout = [[sg.Text('Number of validation calculations:'),sg.Input(key = '-npoints-',size = [inputSize,1])],
-                             [sg.Button('Accept'),sg.Button('Cancel')]]
-            npointsWindow = sg.Window('Invalid value notification',npointsLayout,location=[400,0],finalize=True,keep_on_top=True)
-            while True:
-                event, values = npointsWindow.read(timeout=timeout)
-                if event == sg.WIN_CLOSED or event == 'Cancel':
-                    break
-                if event == 'Accept':
-                    try:
-                        npoints = int(values['-npoints-'])
-                        if npoints >= 0:
-                            break
-                        else:
-                            npoints = 0
-                    except ValueError:
-                        pass
-                    print('Invalid number of points')
-            npointsWindow.close()
-            if npoints > 0:
-                self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
-                self.children.append(self.pointWindow)
-        if event == 'Run':
-            self.run()
-    def run(self):
-        # get problem dimensions
-        m = len(self.validationPoints)
-        n = len(self.tagWindow.tags)
-        # check that we have enough data to go ahead
-        if not self.tagWindow.valid:
-            print('Initial estimates for coefficients not completed')
-            return
-        if m == 0:
-            print('Validation points not completed')
-            return
+# Any methods required to call Thermochimica (or other) should be imported from another class.\
+def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,tags,maxIts,tol):
+    # get problem dimensions
+    m = len(validationPoints)
+    n = len(initial0)
+    # check that we have enough data to go ahead
+    if n == 0:
+        print('No initial values')
+        return
+    if m == 0:
+        print('No validation points')
+        return
 
-        # initialize Broyden matrix as 1s
-        broydenMatrix = np.ones([m,n])
+    # initialize Broyden matrix as 1s
+    broydenMatrix = np.ones([m,n])
 
-        # y is dependent true values from validation data set
-        y = np.array([self.validationPoints[i][-1] for i in range(m)])
+    # y is dependent true values from validation data set
+    y = np.array([validationPoints[i][-1] for i in range(m)])
 
-        # beta is array of coefficients, start with initial value 0
-        beta = np.array(self.tagWindow.initialValues[0])
-        betaOld = beta
+    # beta is array of coefficients, start with initial value 0
+    beta = np.array(initial0)
+    betaOld = beta
 
-        f = getFuntionalValues(self.tagWindow.tags,beta)
+    f = getFunctionalValuesFunction(tags,beta)
 
+    r = f - y
+    rOld = r
+
+    # Compute the functional norm:
+    norm = functionalNorm(r)
+
+    # now change to initial value 1, then enter loop
+    beta = np.array(initial1)
+
+    for iteration in range(maxIts):
+        # calculate the functional values (using Thermochimica in this case)
+        # leave this call straightforward: want to be able to swap this function for any other black box
+        f = getFunctionalValuesFunction(tags,beta)
+
+        # residuals and deltas
+        s = beta - betaOld
         r = f - y
+        t = rOld - r
+
+        # Update vectors for succeeding iteration:
+        betaOld = beta
         rOld = r
 
         # Compute the functional norm:
         norm = functionalNorm(r)
+        print(f'Iteration {iteration}, Norm {norm}')
+        if norm < tol:
+            print(f'{beta} after {iteration+1}')
+            break
 
-        # now change to initial value 1, then enter loop
-        beta = np.array(self.tagWindow.initialValues[1])
-
-        for iteration in range(self.maxIts):
-            # calculate the functional values (using Thermochimica in this case)
-            # leave this call straightforward: want to be able to swap this function for any other black box
-            f = getFuntionalValues(self.tagWindow.tags,beta)
-
-            # residuals and deltas
-            s = beta - betaOld
-            r = f - y
-            t = rOld - r
-
-            # Update vectors for succeeding iteration:
-            betaOld = beta
-            rOld = r
-
-            # Compute the functional norm:
-            norm = functionalNorm(r)
-            print(norm)
-            if norm < self.tol:
-                print(f'{beta} after {iteration+1}')
-                break
-
-            # Update the Broyden matrix:
-            broyden(broydenMatrix, t, s)
-            # Compute the direction vector:
-            l = 1/(iteration+1)**2
-            steplength = 1
-            # calculate update to coefficients
-            beta = directionVector(r, broydenMatrix, beta, l, steplength)
-            print(beta)
-
-windowList = []
-Optima()
-while len(windowList) > 0:
-    for window in windowList:
-        window.read()
+        # Update the Broyden matrix:
+        broyden(broydenMatrix, t, s)
+        # Compute the direction vector:
+        l = 1/(iteration+1)**2
+        steplength = 1
+        # calculate update to coefficients
+        beta = directionVector(r, broydenMatrix, beta, l, steplength)
+        print(f'Current coefficients: {beta}')
