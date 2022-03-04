@@ -7,6 +7,17 @@ import subprocess
 timeout = 50
 inputSize = 16
 
+atomic_number_map = [
+    'H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P',
+    'S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn',
+    'Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh',
+    'Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',
+    'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re',
+    'Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th',
+    'Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf','Db',
+    'Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts', 'Og'
+]
+
 class TagWindow:
     def __init__(self,datafile,windowList):
         self.windowList = windowList
@@ -63,9 +74,8 @@ class TagWindow:
             self.valid = True
             self.close()
 
-
 class PointValidationWindow:
-    def __init__(self,npoints,elements,points,reference,windowList):
+    def __init__(self,npoints,elements,points,windowList):
         self.windowList = windowList
         self.windowList.append(self)
         self.npoints = npoints
@@ -74,10 +84,15 @@ class PointValidationWindow:
         # This array will have all the previously-accumulated points in it.
         # The plan is to allow multiple of these windows simultaneously.
         self.points = points
-        self.reference = reference
 
         self.open()
         self.children = []
+
+        # stuff for writing input file (hardcode values for now)
+        self.datafile = 'optima.dat'
+        self.tunit = 'k'
+        self.punit = 'atm'
+        self.munit = 'moles'
     def close(self):
         for child in self.children:
             child.close()
@@ -112,7 +127,7 @@ class PointValidationWindow:
             if not max(concentrations) > 0:
                 print('Need at least one element present')
                 return
-            newpoints.append([[temp,pres]+concentrations])
+            newpoints.append([temp,pres]+concentrations)
             for i in range(1,self.npoints):
                 lastTemp = temp
                 lastPres = pres
@@ -151,18 +166,19 @@ class PointValidationWindow:
                 if event == sg.WIN_CLOSED or event == 'Cancel':
                     break
                 if event == 'Accept':
-                    newgibbs = []
-                    for i in self.npoints:
+                    for i in range(self.npoints):
                         try:
+                            print(f'newpoint: {newpoints[i]}')
                             gibbs = float(values[f'-gibbs{i}-'])
-                            newgibbs.append(gibbs)
+                            newpoints[i].append(gibbs)
+                            print(f'newpoint extended: {newpoints[i]}')
                         except ValueError:
                             print(f'Invalid entry -gibbs{i}-')
                             return
-                    self.points.append(newpoints)
-                    self.reference.append(newgibbs)
+                    referenceWindow.close()
+                    self.points.extend(newpoints)
+                    self.writeFile()
                     self.close()
-            npointsWindow.close()
     def validEntry(self,value):
         if value == '':
             outValue = 0
@@ -179,3 +195,17 @@ class PointValidationWindow:
                 outValue = 0
                 status = -1
         return outValue, status
+
+    def writeFile(self):
+        print(self.points)
+        with open('validationPoints.ti', 'w') as inputFile:
+            inputFile.write('! Optima-generated input file for validation points\n')
+            inputFile.write(f'data file         = {self.datafile}\n')
+            inputFile.write(f'temperature unit         = {self.tunit}\n')
+            inputFile.write(f'pressure unit          = {self.punit}\n')
+            inputFile.write(f'mass unit          = {self.munit}\n')
+            inputFile.write(f'nEl         = {len(self.elements)} \n')
+            inputFile.write(f'iEl         = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
+            inputFile.write(f'nCalc       = {len(self.points)}\n')
+            for point in self.points:
+                inputFile.write(f'{" ".join([str(point[i]) for i in range(len(self.elements)+2)])}\n')
