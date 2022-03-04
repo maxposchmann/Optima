@@ -105,7 +105,7 @@ def getFuntionalValues(tags, beta):
     shutil.copy('fcctest.dat','optima.dat')
     for i in range(len(tags)):
         subprocess.call(['sed', '-i', '-e',  f's/<{tags[i]}>/{beta[i]}/g', 'optima.dat'])
-    subprocess.run(['../../thermochimicastuff/thermochimica/bin/InputScriptMode','fcctest.ti'])
+    subprocess.run(['../../thermochimicastuff/thermochimica/bin/RunCalculationList','validationPoints.ti'])
 
     jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
     try:
