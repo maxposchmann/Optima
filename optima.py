@@ -120,6 +120,9 @@ def getFuntionalValues(tags, beta):
         f[int(i)-1] = data[i]['integral Gibbs energy']
     return f
 
+# Make this class general. Avoid to the greatest extent possible including any application-specific code.
+# Any methods required to call Thermochimica (or other) should be imported from another class.
+# TODO: actually follow my own design principles.
 class Optima:
     def __init__(self):
         self.tol = 1e-4
@@ -127,6 +130,7 @@ class Optima:
         self.datafile = 'fcctest.dat'
         self.elements = []
         # Get element names so that we can set up the calculation and windows
+        # TODO: move this to another class
         with open(self.datafile) as f:
             f.readline() # read comment line
             line = f.readline() # read first data line (# elements, # phases, n*# species)
@@ -203,24 +207,24 @@ class Optima:
         if event == 'Run':
             self.run()
     def run(self):
+        # get problem dimensions
+        m = len(self.validationPoints)
+        n = len(self.tagWindow.tags)
+        # check that we have enough data to go ahead
         if not self.tagWindow.valid:
             print('Initial estimates for coefficients not completed')
             return
-        if len(self.validationPoints) == 0:
+        if m == 0:
             print('Validation points not completed')
             return
-        print(self.validationPoints)
-        m = 6
-        n = len(self.tagWindow.tags)
+
+        # initialize Broyden matrix as 1s
         broydenMatrix = np.ones([m,n])
 
-        y = np.array([-1.5318396900905138E+003,
-                      -2.1601132664119210E+004,
-                      -4.6885671070912082E+004,
-                      -7.5678723908701446E+004,
-                      -1.0721653913730988E+005,
-                      -1.4109338905291763E+005])
+        # y is dependent true values from validation data set
+        y = np.array([self.validationPoints[i][-1] for i in range(m)])
 
+        # beta is array of coefficients, start with initial value 0
         beta = np.array(self.tagWindow.initialValues[0])
         betaOld = beta
 
@@ -232,11 +236,15 @@ class Optima:
         # Compute the functional norm:
         norm = functionalNorm(r)
 
+        # now change to initial value 1, then enter loop
         beta = np.array(self.tagWindow.initialValues[1])
 
         for iteration in range(self.maxIts):
+            # calculate the functional values (using Thermochimica in this case)
+            # leave this call straightforward: want to be able to swap this function for any other black box
             f = getFuntionalValues(self.tagWindow.tags,beta)
 
+            # residuals and deltas
             s = beta - betaOld
             r = f - y
             t = rOld - r
@@ -257,6 +265,7 @@ class Optima:
             # Compute the direction vector:
             l = 1/(iteration+1)**2
             steplength = 1
+            # calculate update to coefficients
             beta = directionVector(r, broydenMatrix, beta, l, steplength)
             print(beta)
 
