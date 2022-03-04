@@ -115,7 +115,8 @@ def getFuntionalValues(tags, beta):
         jsonFile.close()
         print('Data load failed')
 
-    f = np.zeros(6)
+    m = len(beta)
+    f = np.zeros(m)
     for i in list(data.keys()):
         f[int(i)-1] = data[i]['integral Gibbs energy']
     return f
