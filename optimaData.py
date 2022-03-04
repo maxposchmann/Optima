@@ -166,19 +166,19 @@ class PointValidationWindow:
                 if event == sg.WIN_CLOSED or event == 'Cancel':
                     break
                 if event == 'Accept':
+                    valid = True
                     for i in range(self.npoints):
                         try:
-                            print(f'newpoint: {newpoints[i]}')
                             gibbs = float(values[f'-gibbs{i}-'])
                             newpoints[i].append(gibbs)
-                            print(f'newpoint extended: {newpoints[i]}')
                         except ValueError:
-                            print(f'Invalid entry -gibbs{i}-')
-                            return
-                    referenceWindow.close()
-                    self.points.extend(newpoints)
-                    self.writeFile()
-                    self.close()
+                            print(f'Invalid entry {values[f"-gibbs{i}-"]}')
+                            valid = False
+                    if valid:
+                        referenceWindow.close()
+                        self.points.extend(newpoints)
+                        self.writeFile()
+                        self.close()
     def validEntry(self,value):
         if value == '':
             outValue = 0
@@ -197,7 +197,6 @@ class PointValidationWindow:
         return outValue, status
 
     def writeFile(self):
-        print(self.points)
         with open('validationPoints.ti', 'w') as inputFile:
             inputFile.write('! Optima-generated input file for validation points\n')
             inputFile.write(f'data file         = {self.datafile}\n')
