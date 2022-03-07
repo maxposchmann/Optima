@@ -1,68 +1,6 @@
 import numpy as np
 
-def functionalNorm(residual):
-    norm = 0
-    for i in range(len(residual)):
-        norm += residual[i]**2
-    return norm
-
-def broydenUpdate(broydenMatrix,dependent,objective):
-    m = len(dependent)
-    n = len(objective)
-
-    # Compute Bs:
-    update = np.zeros(m)
-    for j in range(n):
-        for i in range(m):
-            update[i] += broydenMatrix[i][j] * objective[j]
-
-    # Compute sTs:
-    sMag = 0
-    for j in range(n):
-        sMag += objective[j]**2
-
-    # Compute (y - Bs) / sTs
-    for i in range(m):
-        update[i] = (dependent[i] - update[i]) / sMag
-
-    # Update the Broyden matrix:
-    for j in range(n):
-        for i in range(m):
-            broydenMatrix[i][j] = broydenMatrix[i][j] + update[i] * objective[j]
-
-def directionVector(functional, broydenMatrix, coefficient, l, steplength):
-    m = len(functional)
-    n = len(coefficient)
-
-    a = np.zeros([n,n])
-    b = np.zeros(n)
-
-    # Compute the (J^T J) matrix:
-    for j in range(n):
-        for i in range(j,n):
-            # Compute the coefficient for the A matrix:
-            for k in range(m):
-                a[i][j] += broydenMatrix[k][i] * broydenMatrix[k][j]
-            # Apply symmetry:
-            a[j][i] = a[i][j]
-
-    # Compute the right hand side vector:
-    for j in range(n):
-        for i in range(m):
-            b[j] = b[j] + broydenMatrix[i][j] * functional[i]
-        a[j][j] = a[j][j] + l
-
-    # Call the linear equation solver:
-    try:
-        [x, residuals, rank, singular] = np.linalg.lstsq(a,b,rcond=None)
-        betaNew = np.zeros(n)
-        # Print results to screen:
-        for j in range(n):
-            betaNew[j] = coefficient[j] + steplength * x[j]
-        return betaNew
-    except np.linalg.LinAlgError:
-        print('There was a problem in solving the system of linear equations.')
-
+# Levenberg-Marquardt non-linear optimizer using Broyden approximation for Jacobian.
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
 def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
@@ -116,6 +54,9 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalVa
         norm = functionalNorm(r)
         print(f'Iteration {iteration}, Norm {norm}')
         if norm < tol:
+            # Converged
+            print()
+            print('Converged')
             print(f'{beta} after {iteration+1}')
             break
 
@@ -127,3 +68,69 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalVa
         # calculate update to coefficients
         beta = directionVector(r, broydenMatrix, beta, l, steplength)
         print(f'Current coefficients: {beta}')
+
+# Functional norm calculation
+def functionalNorm(residual):
+    norm = 0
+    for i in range(len(residual)):
+        norm += residual[i]**2
+    return norm
+
+# Updates to Broyden matric based on current function values
+def broydenUpdate(broydenMatrix,dependent,objective):
+    m = len(dependent)
+    n = len(objective)
+
+    # Compute Bs:
+    update = np.zeros(m)
+    for j in range(n):
+        for i in range(m):
+            update[i] += broydenMatrix[i][j] * objective[j]
+
+    # Compute sTs:
+    sMag = 0
+    for j in range(n):
+        sMag += objective[j]**2
+
+    # Compute (y - Bs) / sTs
+    for i in range(m):
+        update[i] = (dependent[i] - update[i]) / sMag
+
+    # Update the Broyden matrix:
+    for j in range(n):
+        for i in range(m):
+            broydenMatrix[i][j] = broydenMatrix[i][j] + update[i] * objective[j]
+
+# New direction vector given current residual
+def directionVector(functional, broydenMatrix, coefficient, l, steplength):
+    m = len(functional)
+    n = len(coefficient)
+
+    a = np.zeros([n,n])
+    b = np.zeros(n)
+
+    # Compute the (J^T J) matrix:
+    for j in range(n):
+        for i in range(j,n):
+            # Compute the coefficient for the A matrix:
+            for k in range(m):
+                a[i][j] += broydenMatrix[k][i] * broydenMatrix[k][j]
+            # Apply symmetry:
+            a[j][i] = a[i][j]
+
+    # Compute the right hand side vector:
+    for j in range(n):
+        for i in range(m):
+            b[j] = b[j] + broydenMatrix[i][j] * functional[i]
+        a[j][j] = a[j][j] + l
+
+    # Call the linear equation solver:
+    try:
+        [x, residuals, rank, singular] = np.linalg.lstsq(a,b,rcond=None)
+        betaNew = np.zeros(n)
+        # Print results to screen:
+        for j in range(n):
+            betaNew[j] = coefficient[j] + steplength * x[j]
+        return betaNew
+    except np.linalg.LinAlgError:
+        print('There was a problem in solving the system of linear equations.')
