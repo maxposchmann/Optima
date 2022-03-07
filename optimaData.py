@@ -24,7 +24,7 @@ class TagWindow:
         self.windowList.append(self)
         self.datafile = datafile
         self.tags = []
-        self.initialValues = []
+        self.initialValues = [[],[]]
         self.valid = False
         with open(datafile) as f:
             data = f.readlines()
