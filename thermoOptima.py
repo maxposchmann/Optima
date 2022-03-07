@@ -98,14 +98,17 @@ class ThermochimicaOptima:
                         [sg.Button('Remove Validation Data')],
                         [sg.Button('Edit Validation Data')],
                         [sg.Button('Run')]]
-        self.sgw = sg.Window('Optima', [buttonLayout], location = [0,0], finalize=True)
+        methodLayout = [[sg.Text('Select Optimization Method:')],
+                        [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
+                        [sg.Radio('Bayesian optimization', 'methods', default=False, enable_events=True, key='Bayes')]]
+        self.sgw = sg.Window('Optima', [buttonLayout,methodLayout], location = [0,0], finalize=True)
         self.children = []
         # Automatically open a window for initial conditions
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
         self.children.append(self.tagWindow)
         self.validationPoints = []
         # Set default method to Levenberg-Marquardt + Broyden
-        self.method = 'lmb'
+        self.method = optima.LevenbergMarquardtBroyden
     def close(self):
         for child in self.children:
             child.close()
@@ -145,11 +148,17 @@ class ThermochimicaOptima:
                 self.children.append(self.pointWindow)
         if event == 'Run':
             self.run()
+        if event == 'LMB':
+            # Set method to Levenberg-Marquardt + Broyden
+            self.method = optima.LevenbergMarquardtBroyden
+        if event == 'Bayes':
+            # Set method to Bayesian optimization
+            self.method = optima.Bayesian
     def run(self):
-        self.method = 'bayes'
         self.validationPoints = [[300.0, 1.0, 0.5, 0, 0, 0.5, -1531.8396900905138], [640.0, 1.0, 0.5, 0, 0, 0.5, -21601.13266411921], [980.0, 1.0, 0.5, 0, 0, 0.5, -46885.67107091208], [1320.0, 1.0, 0.5, 0, 0, 0.5, -75678.72390870145], [1660.0, 1.0, 0.5, 0, 0, 0.5, -107216.53913730988], [2000.0, 1.0, 0.5, 0, 0, 0.5, -141093.38905291763]]
-        self.tagWindow.tags = ['mix 1', 'mix 2']
         self.tagWindow.valid = True
+        self.tagWindow.initialValues[0] = [-100, -1e6]
+        self.tagWindow.initialValues[1] = [100, 1e6]
         # get problem dimensions
         m = len(self.validationPoints)
         n = len(self.tagWindow.tags)
@@ -161,29 +170,13 @@ class ThermochimicaOptima:
             print('Validation points not completed')
             return
         # call Optima
-        if self.method == 'lmb':
-            self.tagWindow.initialValues[0] = [1.0, 1.0]
-            self.tagWindow.initialValues[1] = [1.01, 0.99]
-            optima.LevenbergMarquardtBroyden(self.validationPoints,
-                                             self.tagWindow.initialValues[0],
-                                             self.tagWindow.initialValues[1],
-                                             getPointValidationValues,
-                                             self.tagWindow.tags,
-                                             self.maxIts,
-                                             self.tol)
-        elif self.method == 'bayes':
-            self.tagWindow.initialValues[0] = [-100, -1e6]
-            self.tagWindow.initialValues[1] = [100, 1e6]
-            optima.Bayesian(self.validationPoints,
-                            self.tagWindow.initialValues[0],
-                            self.tagWindow.initialValues[1],
-                            getPointValidationValues,
-                            self.tagWindow.tags,
-                            self.maxIts,
-                            self.tol)
-        else:
-            print(f'Selected optimization "{self.method}" method not recognized')
-
+        self.method(self.validationPoints,
+                    self.tagWindow.initialValues[0],
+                    self.tagWindow.initialValues[1],
+                    getPointValidationValues,
+                    self.tagWindow.tags,
+                    self.maxIts,
+                    self.tol)
 windowList = []
 ThermochimicaOptima()
 while len(windowList) > 0:
