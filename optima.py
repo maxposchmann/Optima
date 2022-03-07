@@ -150,9 +150,9 @@ def Bayesian(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
     # y is dependent true values from validation data set
     y = np.array([validationPoints[i][-1] for i in range(m)])
 
-    # generate function to be optimized
-    # we need to take an unknown number of tags+values pairs as arguments
-    def black_box_function(**pairs):
+    # Use provided functional to get trial values, then calculate R2 score
+    # Need to take an unknown number of tags+values pairs as arguments.
+    def functionalR2(**pairs):
         tags = list(pairs.keys())
         beta = list(pairs.values())
         f = functional(tags, beta)
@@ -161,13 +161,10 @@ def Bayesian(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
 
     # Set range to optimize within.
     # bayes_opt requires this to be a dictionary.
-    pbounds = dict([(tags[i], [initial0[i],initial1[i]]) for i in range(n)])
+    tagsAndBounds = dict([(tags[i], [initial0[i],initial1[i]]) for i in range(n)])
 
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
-    optimizer = BayesianOptimization(f = black_box_function,
-                                     pbounds = pbounds,
-                                     verbose = 2,
-                                     random_state = 4)
+    optimizer = BayesianOptimization(f = functionalR2, pbounds = tagsAndBounds)
     optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
     # format for output
     results = list(optimizer.max['params'].items())
