@@ -64,7 +64,7 @@ def getPointValidationValues(tags, beta):
 class ThermochimicaOptima:
     def __init__(self):
         self.tol = 1e-4
-        self.maxIts = 300
+        self.maxIts = 30
         self.datafile = 'fcctest.dat'
         self.elements = []
         # Get element names so that we can set up the calculation and windows
@@ -104,6 +104,8 @@ class ThermochimicaOptima:
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
         self.children.append(self.tagWindow)
         self.validationPoints = []
+        # Set default method to Levenberg-Marquardt + Broyden
+        self.method = 'lmb'
     def close(self):
         for child in self.children:
             child.close()
@@ -144,6 +146,10 @@ class ThermochimicaOptima:
         if event == 'Run':
             self.run()
     def run(self):
+        self.method = 'bayes'
+        self.validationPoints = [[300.0, 1.0, 0.5, 0, 0, 0.5, -1531.8396900905138], [640.0, 1.0, 0.5, 0, 0, 0.5, -21601.13266411921], [980.0, 1.0, 0.5, 0, 0, 0.5, -46885.67107091208], [1320.0, 1.0, 0.5, 0, 0, 0.5, -75678.72390870145], [1660.0, 1.0, 0.5, 0, 0, 0.5, -107216.53913730988], [2000.0, 1.0, 0.5, 0, 0, 0.5, -141093.38905291763]]
+        self.tagWindow.tags = ['mix 1', 'mix 2']
+        self.tagWindow.valid = True
         # get problem dimensions
         m = len(self.validationPoints)
         n = len(self.tagWindow.tags)
@@ -154,16 +160,29 @@ class ThermochimicaOptima:
         if m == 0:
             print('Validation points not completed')
             return
-
-        # Use currying to send tags to getPointValidationValues, so we don't have to pass more stuff to Optima
-        validationFunction = functools.partial(getPointValidationValues,self.tagWindow.tags)
         # call Optima
-        optima.LevenbergMarquardtBroyden(self.validationPoints,
-                                         self.tagWindow.initialValues[0],
-                                         self.tagWindow.initialValues[1],
-                                         validationFunction,
-                                         self.maxIts,
-                                         self.tol)
+        if self.method == 'lmb':
+            self.tagWindow.initialValues[0] = [1.0, 1.0]
+            self.tagWindow.initialValues[1] = [1.01, 0.99]
+            optima.LevenbergMarquardtBroyden(self.validationPoints,
+                                             self.tagWindow.initialValues[0],
+                                             self.tagWindow.initialValues[1],
+                                             getPointValidationValues,
+                                             self.tagWindow.tags,
+                                             self.maxIts,
+                                             self.tol)
+        elif self.method == 'bayes':
+            self.tagWindow.initialValues[0] = [-100, -1e6]
+            self.tagWindow.initialValues[1] = [100, 1e6]
+            optima.Bayesian(self.validationPoints,
+                            self.tagWindow.initialValues[0],
+                            self.tagWindow.initialValues[1],
+                            getPointValidationValues,
+                            self.tagWindow.tags,
+                            self.maxIts,
+                            self.tol)
+        else:
+            print(f'Selected optimization "{self.method}" method not recognized')
 
 windowList = []
 ThermochimicaOptima()
