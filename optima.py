@@ -3,7 +3,7 @@ import numpy as np
 # Levenberg-Marquardt non-linear optimizer using Broyden approximation for Jacobian.
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
-def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
+def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
     # get problem dimensions
     m = len(validationPoints)
     n = len(initial0)
@@ -25,7 +25,7 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalVa
     beta = np.array(initial0)
     betaOld = beta
 
-    f = getFunctionalValuesFunction(beta)
+    f = functional(tags,beta)
 
     r = f - y
     rOld = r
@@ -39,7 +39,7 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalVa
     for iteration in range(maxIts):
         # calculate the functional values
         # leave this call straightforward: want to be able to swap this function for any other black box
-        f = getFunctionalValuesFunction(beta)
+        f = functional(tags,beta)
 
         # residuals and deltas
         s = beta - betaOld
@@ -136,7 +136,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         print('There was a problem in solving the system of linear equations.')
 
 # Bayesian optimization
-def Bayesian(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
+def Bayesian(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
@@ -151,15 +151,17 @@ def Bayesian(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxI
     y = np.array([validationPoints[i][-1] for i in range(m)])
 
     # generate function to be optimized
-    def black_box_function(var1,var2):
-        f = getFunctionalValuesFunction([var1,var2])
+    # we need to take an unknown number of tags+values pairs as arguments
+    def black_box_function(**pairs):
+        tags = list(pairs.keys())
+        beta = list(pairs.values())
+        f = functional(tags, beta)
         score = r2_score(y, f)
         return score
 
     # Set range to optimize within.
     # bayes_opt requires this to be a dictionary.
-    pbounds = {'var1': [-100, 100],
-               'var2': [-1e6, 1e6]}
+    pbounds = dict([(tags[i], [initial0[i],initial1[i]]) for i in range(n)])
 
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
     optimizer = BayesianOptimization(f = black_box_function,
