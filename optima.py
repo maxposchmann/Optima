@@ -134,3 +134,43 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         return betaNew
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
+
+# Bayesian optimization
+def Bayesian(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
+    from sklearn.svm import SVC
+    from sklearn.preprocessing import MinMaxScaler
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import r2_score
+    from bayes_opt import BayesianOptimization, UtilityFunction
+    from scipy.stats import norm
+
+    # get problem dimensions
+    m = len(validationPoints)
+    n = len(initial0)
+    # y is dependent true values from validation data set
+    y = np.array([validationPoints[i][-1] for i in range(m)])
+
+    # generate function to be optimized
+    def black_box_function(var1,var2):
+        f = getFunctionalValuesFunction([var1,var2])
+        score = r2_score(y, f)
+        return score
+
+    # Set range to optimize within.
+    # bayes_opt requires this to be a dictionary.
+    pbounds = {'var1': [-100, 100],
+               'var2': [-1e6, 1e6]}
+
+    # Create a BayesianOptimization optimizer and optimize the given black_box_function.
+    optimizer = BayesianOptimization(f = black_box_function,
+                                     pbounds = pbounds,
+                                     verbose = 2,
+                                     random_state = 4)
+    optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
+    # format for output
+    results = list(optimizer.max['params'].items())
+
+    print('Best result:')
+    for i in range(n):
+        print(f'{results[i][0]} = {results[i][1]}')
+    print(f'f(x) = {optimizer.max["target"]}')
