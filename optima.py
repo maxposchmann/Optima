@@ -6,7 +6,7 @@ def functionalNorm(residual):
         norm += residual[i]**2
     return norm
 
-def broyden(broydenMatrix,dependent,objective):
+def broydenUpdate(broydenMatrix,dependent,objective):
     m = len(dependent)
     n = len(objective)
 
@@ -65,7 +65,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
 
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
-def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
+def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxIts,tol):
     # get problem dimensions
     m = len(validationPoints)
     n = len(initial0)
@@ -120,7 +120,7 @@ def optimize(validationPoints,initial0,initial1,getFunctionalValuesFunction,maxI
             break
 
         # Update the Broyden matrix:
-        broyden(broydenMatrix, t, s)
+        broydenUpdate(broydenMatrix, t, s)
         # Compute the direction vector:
         l = 1/(iteration+1)**2
         steplength = 1

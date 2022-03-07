@@ -158,12 +158,12 @@ class ThermochimicaOptima:
         # Use currying to send tags to getPointValidationValues, so we don't have to pass more stuff to Optima
         validationFunction = functools.partial(getPointValidationValues,self.tagWindow.tags)
         # call Optima
-        optima.optimize(self.validationPoints,
-                        self.tagWindow.initialValues[0],
-                        self.tagWindow.initialValues[1],
-                        validationFunction,
-                        self.maxIts,
-                        self.tol)
+        optima.LevenbergMarquardtBroyden(self.validationPoints,
+                                         self.tagWindow.initialValues[0],
+                                         self.tagWindow.initialValues[1],
+                                         validationFunction,
+                                         self.maxIts,
+                                         self.tol)
 
 windowList = []
 ThermochimicaOptima()
