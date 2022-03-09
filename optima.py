@@ -15,6 +15,14 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,functional,tags
         print('No validation points')
         return
 
+    # make sure initial guesses are not equal
+    for i in range(n):
+        if initial0[i] == initial1[i]:
+            if initial1[i] == 0:
+                initial1[i] = 7
+            else:
+                initial1[i] = 1.007 * initial0[i]
+
     # initialize Broyden matrix as 1s
     broydenMatrix = np.ones([m,n])
 
