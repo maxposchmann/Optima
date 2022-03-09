@@ -111,6 +111,11 @@ class ThermochimicaOptima:
         self.validationPoints = []
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
+        # temp debug stuff
+        self.validationPoints = [[300.0, 1.0, 0.5, 0, 0, 0.5, -1531.8396900905138], [640.0, 1.0, 0.5, 0, 0, 0.5, -21601.13266411921], [980.0, 1.0, 0.5, 0, 0, 0.5, -46885.67107091208], [1320.0, 1.0, 0.5, 0, 0, 0.5, -75678.72390870145], [1660.0, 1.0, 0.5, 0, 0, 0.5, -107216.53913730988], [2000.0, 1.0, 0.5, 0, 0, 0.5, -141093.38905291763]]
+        self.tagWindow.valid = True
+        self.tagWindow.initialValues[0] = [-100, -1e6]
+        self.tagWindow.initialValues[1] = [100, 1e6]
     def close(self):
         for child in self.children:
             child.close()
@@ -179,10 +184,6 @@ class ThermochimicaOptima:
             # Set method to Bayesian optimization
             self.method = optima.Bayesian
     def run(self):
-        self.validationPoints = [[300.0, 1.0, 0.5, 0, 0, 0.5, -1531.8396900905138], [640.0, 1.0, 0.5, 0, 0, 0.5, -21601.13266411921], [980.0, 1.0, 0.5, 0, 0, 0.5, -46885.67107091208], [1320.0, 1.0, 0.5, 0, 0, 0.5, -75678.72390870145], [1660.0, 1.0, 0.5, 0, 0, 0.5, -107216.53913730988], [2000.0, 1.0, 0.5, 0, 0, 0.5, -141093.38905291763]]
-        self.tagWindow.valid = True
-        self.tagWindow.initialValues[0] = [-100, -1e6]
-        self.tagWindow.initialValues[1] = [100, 1e6]
         # get problem dimensions
         m = len(self.validationPoints)
         n = len(self.tagWindow.tags)
