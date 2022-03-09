@@ -21,7 +21,6 @@ atomic_number_map = [
 class TagWindow:
     def __init__(self,datafile,windowList):
         self.windowList = windowList
-        self.windowList.append(self)
         self.datafile = datafile
         self.tags = []
         self.initialValues = [[],[]]
@@ -43,6 +42,7 @@ class TagWindow:
         if self in self.windowList:
             self.windowList.remove(self)
     def open(self):
+        self.windowList.append(self)
         tagMaxLength = 3
         for tag in self.tags:
             tagMaxLength = max(tagMaxLength,len(tag))
