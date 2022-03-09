@@ -76,6 +76,7 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,functional,tags
         # calculate update to coefficients
         beta = directionVector(r, broydenMatrix, beta, l, steplength)
         print(f'Current coefficients: {beta}')
+    print('Reached maximum iterations without converging')
 
 # Functional norm calculation
 def functionalNorm(residual):
