@@ -41,9 +41,10 @@ atomic_number_map = [
 ]
 
 def getPointValidationValues(tags, beta):
-    shutil.copy('fcctest.dat','optima.dat')
+    shutil.copy('optima-inter.dat','optima.dat')
+    keys = list(tags.keys())
     for i in range(len(tags)):
-        subprocess.call(['sed', '-i', '-e',  f's/<{tags[i]}>/{beta[i]}/g', 'optima.dat'])
+        subprocess.call(['sed', '-i', '-e',  f's/<{keys[i]}>/{beta[i]}/g', 'optima.dat'])
     subprocess.run(['../../thermochimicastuff/thermochimica/bin/RunCalculationList','validationPoints.ti'])
 
     jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
@@ -60,6 +61,16 @@ def getPointValidationValues(tags, beta):
     for i in list(data.keys()):
         f[int(i)-1] = data[i]['integral Gibbs energy']
     return f
+
+def createIntermediateDat(tags):
+    shutil.copy('fcctest.dat','optima-inter.dat')
+    tagCheck = []
+    for tag in tags:
+        if tags[tag][1]:
+            tagCheck.append((tag, tags[tag][0]))
+        else:
+            subprocess.call(['sed', '-i', '-e',  f's/<{tag}>/{tags[tag][0][0]}/g', 'optima-inter.dat'])
+    return dict(tagCheck)
 
 class ThermochimicaOptima:
     def __init__(self):
@@ -114,8 +125,6 @@ class ThermochimicaOptima:
         # temp debug stuff
         self.validationPoints = [[300.0, 1.0, 0.5, 0, 0, 0.5, -1531.8396900905138], [640.0, 1.0, 0.5, 0, 0, 0.5, -21601.13266411921], [980.0, 1.0, 0.5, 0, 0, 0.5, -46885.67107091208], [1320.0, 1.0, 0.5, 0, 0, 0.5, -75678.72390870145], [1660.0, 1.0, 0.5, 0, 0, 0.5, -107216.53913730988], [2000.0, 1.0, 0.5, 0, 0, 0.5, -141093.38905291763]]
         self.tagWindow.valid = True
-        self.tagWindow.initialValues[0] = [-100, -1e6]
-        self.tagWindow.initialValues[1] = [100, 1e6]
     def close(self):
         for child in self.children:
             child.close()
@@ -194,12 +203,12 @@ class ThermochimicaOptima:
         if m == 0:
             print('Validation points not completed')
             return
+        # call tag preprocessor
+        intertags = createIntermediateDat(self.tagWindow.tags)
         # call Optima
         self.method(self.validationPoints,
-                    self.tagWindow.initialValues[0],
-                    self.tagWindow.initialValues[1],
+                    intertags,
                     getPointValidationValues,
-                    self.tagWindow.tags,
                     self.maxIts,
                     self.tol)
 windowList = []

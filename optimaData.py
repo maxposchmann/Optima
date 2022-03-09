@@ -22,17 +22,17 @@ class TagWindow:
     def __init__(self,datafile,windowList):
         self.windowList = windowList
         self.datafile = datafile
-        self.tags = []
-        self.initialValues = [[],[]]
         self.valid = False
+        tags = []
         with open(datafile) as f:
             data = f.readlines()
             for line in data:
-                self.tags.extend(re.findall('<([^>]*)>', line))
-        if self.tags == []:
+                tags.extend(re.findall('<([^>]*)>', line))
+        if tags == []:
             print('No tags found')
             self.close()
-        self.tags = list(dict.fromkeys(self.tags))
+        tags = list(dict.fromkeys(tags))
+        self.tags = dict([(tags[i], [[0,0],True]) for i in range(len(tags))])
         self.open()
         self.children = []
     def close(self):
@@ -49,14 +49,18 @@ class TagWindow:
         headingLayout = [[
                           sg.Text('Tag',   size = [tagMaxLength,1],justification='left'),
                           sg.Text('Initial Value 1',size = [inputSize,1],justification='center'),
-                          sg.Text('Initial Value 2',size = [inputSize,1],justification='center')
+                          sg.Text('Initial Value 2',size = [inputSize,1],justification='center'),
+                          sg.Text('Optimize',justification='center'),
+                          sg.Text('Constant',justification='center')
                         ]]
         tagsLayout = []
         for tag in self.tags:
             tagsLayout.append([[
                                 sg.Text(tag,size = [tagMaxLength,1],justification='left'),
                                 sg.Input(key = f'{tag}-in1',size = [inputSize,1]),
-                                sg.Input(key = f'{tag}-in2',size = [inputSize,1])
+                                sg.Input(key = f'{tag}-in2',size = [inputSize,1]),
+                                sg.Radio('', f'{tag}-set', key = f'{tag}-opt', default = True, pad = (20,0)),
+                                sg.Radio('', f'{tag}-set', key = f'{tag}-con', default = False, pad = (20,0))
                              ]])
         buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
         self.sgw = sg.Window('Coefficients', [headingLayout,tagsLayout,buttonLayout], location = [400,0], finalize=True)
@@ -65,12 +69,20 @@ class TagWindow:
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
         if event == 'Accept':
-            self.initialValues = [[],[]]
-            for tag in self.tags:
-                key1 = f'{tag}-in1'
-                key2 = f'{tag}-in2'
-                self.initialValues[0].append(float(values[key1]))
-                self.initialValues[1].append(float(values[key2]))
+            for tag in self.tags.keys():
+                try:
+                    if values[f'{tag}-in1'] == '':
+                        v1 = 0
+                    else:
+                        v1 = float(values[f'{tag}-in1'])
+                    if values[f'{tag}-in2'] == '':
+                        v2 = 0
+                    else:
+                        v2 = float(values[f'{tag}-in2'])
+                    self.tags[tag] = [[v1,v2],values[f'{tag}-opt']]
+                except ValueError:
+                    print(f'Invalid initial value for {tag}')
+                    return
             self.valid = True
             self.close()
 

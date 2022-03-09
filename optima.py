@@ -3,25 +3,18 @@ import numpy as np
 # Levenberg-Marquardt non-linear optimizer using Broyden approximation for Jacobian.
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
-def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
+def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     # get problem dimensions
     m = len(validationPoints)
-    n = len(initial0)
+    n = len(tags)
+
     # check that we have enough data to go ahead
     if n == 0:
-        print('No initial values')
+        print('No tags with unknown values')
         return
     if m == 0:
         print('No validation points')
         return
-
-    # make sure initial guesses are not equal
-    for i in range(n):
-        if initial0[i] == initial1[i]:
-            if initial1[i] == 0:
-                initial1[i] = 7
-            else:
-                initial1[i] = 1.007 * initial0[i]
 
     # initialize Broyden matrix as 1s
     broydenMatrix = np.ones([m,n])
@@ -30,7 +23,7 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,functional,tags
     y = np.array([validationPoints[i][-1] for i in range(m)])
 
     # beta is array of coefficients, start with initial value 0
-    beta = np.array(initial0)
+    beta = np.array([tags[tag][0] for tag in tags])
     betaOld = beta
 
     f = functional(tags,beta)
@@ -42,7 +35,14 @@ def LevenbergMarquardtBroyden(validationPoints,initial0,initial1,functional,tags
     norm = functionalNorm(r)
 
     # now change to initial value 1, then enter loop
-    beta = np.array(initial1)
+    beta = np.array([tags[tag][1] for tag in tags])
+    # ensure initial values don't repeat
+    for i in range(n):
+        if beta[i] == betaOld[i]:
+            if beta[i] == 0:
+                beta[i] = 7
+            else:
+                beta[i] = 1.007 * betaOld[i]
 
     for iteration in range(maxIts):
         # calculate the functional values
@@ -145,7 +145,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         print('There was a problem in solving the system of linear equations.')
 
 # Bayesian optimization
-def Bayesian(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
+def Bayesian(validationPoints,tags,functional,maxIts,tol):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
@@ -155,25 +155,34 @@ def Bayesian(validationPoints,initial0,initial1,functional,tags,maxIts,tol):
 
     # get problem dimensions
     m = len(validationPoints)
-    n = len(initial0)
+    n = len(tags)
+
+    # check that we have enough data to go ahead
+    if n == 0:
+        print('No tags with unknown values')
+        return
+    if m == 0:
+        print('No validation points')
+        return
+    for tag in tags:
+        if tags[tag][0] >= tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 >= bound 2')
+            print(f'Check tag {tag}')
+            return
+
     # y is dependent true values from validation data set
     y = np.array([validationPoints[i][-1] for i in range(m)])
 
     # Use provided functional to get trial values, then calculate R2 score
     # Need to take an unknown number of tags+values pairs as arguments.
     def functionalR2(**pairs):
-        tags = list(pairs.keys())
         beta = list(pairs.values())
         f = functional(tags, beta)
         score = r2_score(y, f)
         return score
 
-    # Set range to optimize within.
-    # bayes_opt requires this to be a dictionary.
-    tagsAndBounds = dict([(tags[i], [initial0[i],initial1[i]]) for i in range(n)])
-
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
-    optimizer = BayesianOptimization(f = functionalR2, pbounds = tagsAndBounds)
+    optimizer = BayesianOptimization(f = functionalR2, pbounds = tags)
     optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
     # format for output
     results = list(optimizer.max['params'].items())
