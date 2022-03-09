@@ -101,7 +101,9 @@ class ThermochimicaOptima:
         methodLayout = [[sg.Text('Select Optimization Method:')],
                         [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
                         [sg.Radio('Bayesian optimization', 'methods', default=False, enable_events=True, key='Bayes')]]
-        self.sgw = sg.Window('Optima', [buttonLayout,methodLayout], location = [0,0], finalize=True)
+        settingsLayout = [[sg.Text('Tolerance:'),sg.Input(key = '-tol-', size = inputSize)],
+                          [sg.Text('Max Iterations:'),sg.Input(key = '-maxIts-', size = inputSize)]]
+        self.sgw = sg.Window('Optima', [buttonLayout,methodLayout,settingsLayout], location = [0,0], finalize=True)
         self.children = []
         # Automatically open a window for initial conditions
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
@@ -147,6 +149,28 @@ class ThermochimicaOptima:
                 self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
         if event == 'Run':
+            try:
+                if values['-tol-'] == '':
+                    # let blank reset to default
+                    self.tol = 1e-4
+                else:
+                    tol = float(values['-tol-'])
+                    if tol > 0:
+                        self.tol = tol
+            except ValueError:
+                print('Invalid tolerance')
+                return
+            try:
+                if values['-maxIts-'] == '':
+                    # let blank reset to default
+                    self.maxIts = 30
+                else:
+                    maxIts = int(values['-maxIts-'])
+                    if maxIts > 0:
+                        self.maxIts = maxIts
+            except ValueError:
+                print('Invalid iterations')
+                return
             self.run()
         if event == 'LMB':
             # Set method to Levenberg-Marquardt + Broyden
