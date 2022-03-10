@@ -109,6 +109,7 @@ class ThermochimicaOptima:
                         [sg.Button('Remove Validation Data')],
                         [sg.Button('Edit Validation Data')],
                         [sg.Button('Save Validation Data')],
+                        [sg.Button('Load Validation Data')],
                         [sg.Button('Run')]]
         methodLayout = [[sg.Text('Select Optimization Method:')],
                         [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
@@ -123,15 +124,6 @@ class ThermochimicaOptima:
         self.validationPoints = dict([])
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
-        # temp debug stuff
-        self.validationPoints = dict([
-                                      (0,dict([('state',[300.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-1531.8396900905138)])),
-                                      (1,dict([('state',[640.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-21601.13266411921)])),
-                                      (2,dict([('state',[980.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-46885.67107091208)])),
-                                      (3,dict([('state',[1320.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-75678.72390870145)])),
-                                      (4,dict([('state',[1660.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-107216.53913730988)])),
-                                      (5,dict([('state',[2000.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-141093.38905291763)])),
-                                     ])
         self.tagWindow.valid = True
     def close(self):
         for child in self.children:
@@ -172,6 +164,8 @@ class ThermochimicaOptima:
                 self.children.append(self.pointWindow)
         if event == 'Save Validation Data':
             self.saveValidation()
+        if event == 'Load Validation Data':
+            self.loadValidation()
         if event == 'Run':
             try:
                 if values['-tol-'] == '':
@@ -226,7 +220,21 @@ class ThermochimicaOptima:
             print('Cannot save empty validation set')
             return
         with open('validationData.json', 'w') as outfile:
-            outfile.write(json.dumps(self.validationPoints, indent=4))
+            json.dump(self.validationPoints, outfile, indent=4)
+    def loadValidation(self):
+        jsonFile = open('validationData.json',)
+        try:
+            newPoints = json.load(jsonFile)
+            jsonFile.close()
+        except:
+            jsonFile.close()
+            print('Data load failed')
+            return
+        if len(newPoints) > 0:
+            self.validationPoints.update(newPoints)
+            print(f'{len(newPoints)} validation points loaded')
+        else:
+            print('No entries in validation JSON')
 
 windowList = []
 ThermochimicaOptima()
