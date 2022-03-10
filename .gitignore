@@ -1,6 +1,7 @@
 # Thermochimica
 *.dat
 *.ti
+*.json
 
 # Fortran
 # Prerequisites
