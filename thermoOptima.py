@@ -62,8 +62,8 @@ def getPointValidationValues(tags, beta):
         f[int(i)-1] = data[i]['integral Gibbs energy']
     return f
 
-def createIntermediateDat(tags):
-    shutil.copy('fcctest.dat','optima-inter.dat')
+def createIntermediateDat(tags,filename):
+    shutil.copy(filename,'optima-inter.dat')
     tagCheck = []
     for tag in tags:
         if tags[tag][1]:
@@ -204,7 +204,7 @@ class ThermochimicaOptima:
             print('Validation points not completed')
             return
         # call tag preprocessor
-        intertags = createIntermediateDat(self.tagWindow.tags)
+        intertags = createIntermediateDat(self.tagWindow.tags,self.datafile)
         # call Optima
         self.method(self.validationPoints,
                     intertags,
