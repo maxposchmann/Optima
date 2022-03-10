@@ -3,6 +3,10 @@ import numpy as np
 # Levenberg-Marquardt non-linear optimizer using Broyden approximation for Jacobian.
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
+# validationPoints is a dict containing points with system state and values to compare.
+# tags is a dict containing coefficient names and two initial guesses for each
+# functional is a function that returns an array of values corresponding to the validationPoints
+# maxIts and tol are convergence parameters
 def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     # get problem dimensions
     m = len(validationPoints)
@@ -145,6 +149,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         print('There was a problem in solving the system of linear equations.')
 
 # Bayesian optimization
+# arguments match those in LevenbergMarquardtBroyden so a common interface can be used
 def Bayesian(validationPoints,tags,functional,maxIts,tol):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
