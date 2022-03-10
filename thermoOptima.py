@@ -108,6 +108,7 @@ class ThermochimicaOptima:
                         [sg.Button('Add Validation Data')],
                         [sg.Button('Remove Validation Data')],
                         [sg.Button('Edit Validation Data')],
+                        [sg.Button('Save Validation Data')],
                         [sg.Button('Run')]]
         methodLayout = [[sg.Text('Select Optimization Method:')],
                         [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
@@ -169,6 +170,8 @@ class ThermochimicaOptima:
             if npoints > 0:
                 self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
+        if event == 'Save Validation Data':
+            self.saveValidation()
         if event == 'Run':
             try:
                 if values['-tol-'] == '':
@@ -218,6 +221,13 @@ class ThermochimicaOptima:
                     getPointValidationValues,
                     self.maxIts,
                     self.tol)
+    def saveValidation(self):
+        if len(self.validationPoints) == 0:
+            print('Cannot save empty validation set')
+            return
+        with open('validationData.json', 'w') as outfile:
+            outfile.write(json.dumps(self.validationPoints, indent=4))
+
 windowList = []
 ThermochimicaOptima()
 while len(windowList) > 0:
