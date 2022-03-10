@@ -99,12 +99,6 @@ class PointValidationWindow:
 
         self.open()
         self.children = []
-
-        # stuff for writing input file (hardcode values for now)
-        self.datafile = f'{os.getcwd()}/optima.dat'
-        self.tunit = 'K'
-        self.punit = 'atm'
-        self.munit = 'moles'
     def close(self):
         for child in self.children:
             child.close()
@@ -190,7 +184,6 @@ class PointValidationWindow:
                     if valid:
                         referenceWindow.close()
                         self.points.update(newpoints)
-                        self.writeFile()
                         self.close()
     def validEntry(self,value):
         if value == '':
@@ -208,15 +201,3 @@ class PointValidationWindow:
                 outValue = 0
                 status = -1
         return outValue, status
-    def writeFile(self):
-        with open('validationPoints.ti', 'w') as inputFile:
-            inputFile.write('! Optima-generated input file for validation points\n')
-            inputFile.write(f'data file         = {self.datafile}\n')
-            inputFile.write(f'temperature unit         = {self.tunit}\n')
-            inputFile.write(f'pressure unit          = {self.punit}\n')
-            inputFile.write(f'mass unit          = {self.munit}\n')
-            inputFile.write(f'nEl         = {len(self.elements)} \n')
-            inputFile.write(f'iEl         = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
-            inputFile.write(f'nCalc       = {len(self.points)}\n')
-            for point in self.points.keys():
-                inputFile.write(f'{" ".join([str(self.points[point]["state"][i]) for i in range(len(self.elements)+2)])}\n')

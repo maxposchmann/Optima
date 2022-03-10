@@ -125,6 +125,12 @@ class ThermochimicaOptima:
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
         self.tagWindow.valid = True
+
+        # stuff for writing input file (hardcode values for now)
+        self.datfile = f'{os.getcwd()}/optima.dat'
+        self.tunit = 'K'
+        self.punit = 'atm'
+        self.munit = 'moles'
     def close(self):
         for child in self.children:
             child.close()
@@ -213,6 +219,8 @@ class ThermochimicaOptima:
         if m == 0:
             print('Validation points not completed')
             return
+        # write input file
+        self.writeFile()
         # call tag preprocessor
         intertags = createIntermediateDat(self.tagWindow.tags,self.datafile)
         # call Optima
@@ -241,6 +249,18 @@ class ThermochimicaOptima:
             print(f'{len(newPoints)} validation points loaded')
         else:
             print('No entries in validation JSON')
+    def writeFile(self):
+        with open('validationPoints.ti', 'w') as inputFile:
+            inputFile.write('! Optima-generated input file for validation points\n')
+            inputFile.write(f'data file         = {self.datfile}\n')
+            inputFile.write(f'temperature unit         = {self.tunit}\n')
+            inputFile.write(f'pressure unit          = {self.punit}\n')
+            inputFile.write(f'mass unit          = {self.munit}\n')
+            inputFile.write(f'nEl         = {len(self.elements)} \n')
+            inputFile.write(f'iEl         = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
+            inputFile.write(f'nCalc       = {len(self.validationPoints)}\n')
+            for point in self.validationPoints.keys():
+                inputFile.write(f'{" ".join([str(self.validationPoints[point]["state"][i]) for i in range(len(self.elements)+2)])}\n')
 
 class EditDataWindow:
     def __init__(self,points,elements):
