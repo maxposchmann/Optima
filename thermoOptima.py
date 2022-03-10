@@ -279,7 +279,9 @@ class EditDataWindow:
             [sg.Text('Temperature'), sg.Input(key='-temp-',size=(inputSize,1))],
             [sg.Text('Pressure'), sg.Input(key='-pres-',size=(inputSize,1))]]
         outputColumn.extend([[sg.Text(f'{self.elements[i]} concentration'),sg.Input(key=f'-{self.elements[i]}-',size=(inputSize,1))] for i in range(len(self.elements))])
-        outputColumn.extend([[sg.Button('Edit Point', disabled = True), sg.Button('Delete Point', disabled = True)],
+        outputColumn.extend([
+            [sg.Text('Gibbs Energy'), sg.Input(key='-gibbs-',size=(inputSize,1))],
+            [sg.Button('Edit Point', disabled = True), sg.Button('Delete Point', disabled = True)],
             [sg.Text('Filter Points', font='underline')],
             [sg.Text('Temperature Range:')],
             [sg.Input(key='-tfilterlow-',size=(inputSize,1)),sg.Input(key='-tfilterhi-',size=(inputSize,1))],
@@ -335,6 +337,25 @@ class EditDataWindow:
             self.getData()
         elif event == 'Delete Point':
             del self.points[self.point]
+            self.getData()
+        elif event == 'Edit Point':
+            try:
+                self.points[self.point]['state'][0] = float(values['-temp-'])
+            except ValueError:
+                pass
+            try:
+                self.points[self.point]['state'][1] = float(values['-pres-'])
+            except ValueError:
+                pass
+            for i in range(len(self.elements)):
+                try:
+                    self.points[self.point]['state'][i+2] = float(values[f'-{self.elements[i]}-'])
+                except ValueError:
+                    pass
+            try:
+                self.points[self.point]['gibbs'] = float(values['-gibbs-'])
+            except ValueError:
+                pass
             self.getData()
     def getData(self):
         self.data = []
