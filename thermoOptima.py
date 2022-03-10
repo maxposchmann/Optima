@@ -106,7 +106,7 @@ class ThermochimicaOptima:
         windowList.append(self)
         buttonLayout = [[sg.Button('Edit Coefficients')],
                         [sg.Button('Add Validation Data')],
-                        [sg.Button('Remove Validation Data')],
+                        [sg.Button('Clear Validation Data')],
                         [sg.Button('Edit Validation Data')],
                         [sg.Button('Save Validation Data')],
                         [sg.Button('Load Validation Data')],
@@ -162,6 +162,12 @@ class ThermochimicaOptima:
             if npoints > 0:
                 self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
+        if event == 'Clear Validation Data':
+            self.validationPoints = dict([])
+            print('Validation data cleared')
+        if event == 'Edit Validation Data':
+            editDataWindow = EditDataWindow(self.validationPoints,self.elements)
+            self.children.append(editDataWindow)
         if event == 'Save Validation Data':
             self.saveValidation()
         if event == 'Load Validation Data':
@@ -235,6 +241,74 @@ class ThermochimicaOptima:
             print(f'{len(newPoints)} validation points loaded')
         else:
             print('No entries in validation JSON')
+
+class EditDataWindow:
+    def __init__(self,points,elements):
+        self.points = points
+        self.elements = elements
+        windowList.append(self)
+        dataColumn = [
+            [sg.Text('Data Points')],
+            [sg.Listbox(values=[], enable_events=True, size=(30, 50), key='-dataList-')]
+        ]
+        outputColumn = [
+            [sg.Text('Validation Point Details')],
+            [sg.Multiline(key='-details-', size=(50,10), no_scrollbar=True)],
+            [sg.Text(key = '-status-')],
+            [sg.Text('Filter points', font='underline')],
+            [sg.Text('Temperature Range:')],
+            [sg.Input(key='-tfilterlow-',size=(inputSize,1)),sg.Input(key='-tfilterhi-',size=(inputSize,1))],
+            [sg.Button('Apply Filter')]
+        ]
+        self.sgw = sg.Window('Data inspection',
+            [[sg.Pane([
+                sg.Column(dataColumn, element_justification='l', expand_x=True, expand_y=True),
+                sg.Column(outputColumn, element_justification='c', expand_x=True, expand_y=True)
+            ], orientation='h', k='-PANE-')]],
+            location = [0,0], finalize=True)
+        self.getData()
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in windowList:
+            windowList.remove(self)
+    def read(self):
+        event, values = self.sgw.read(timeout=timeout)
+        if event == sg.WIN_CLOSED or event == 'Exit':
+            self.close()
+        elif event == '-dataList-':
+            point = values['-dataList-'][0][0]
+            elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
+            details = (
+                       f'Temperature: {self.points[point]["state"][0]:6.2f} K\n'
+                      +f'Pressure: {self.points[point]["state"][1]:6.2f} atm\n'
+                      +elementDetails
+                      +f'Gibbs energy: {self.points[point]["gibbs"]:6.2f} J'
+                     )
+            self.sgw['-details-'].update(details)
+        elif event == 'Apply Filter':
+            tlo = -np.Inf
+            thi  = np.Inf
+            try:
+                tlo = float(values['-tfilterlow-'])
+            except:
+                pass
+            try:
+                thi = float(values['-tfilterhi-'])
+            except:
+                pass
+            self.getData(tlo = tlo, thi = thi)
+    def getData(self,tlo = -np.Inf, thi = np.Inf):
+        self.data = []
+        for point in self.points.keys():
+            if tlo <= self.points[point]["state"][0] and thi >= self.points[point]["state"][0]:
+                self.data.append([point, f'{self.points[point]["state"][0]:6.2f} K'
+                                        +f'{self.points[point]["state"][1]:6.2f} atm'
+                                 ])
+        self.sgw['-dataList-'].update(self.data)
+
 
 windowList = []
 ThermochimicaOptima()
