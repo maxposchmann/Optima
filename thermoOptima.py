@@ -119,11 +119,18 @@ class ThermochimicaOptima:
         # Automatically open a window for initial conditions
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
         self.children.append(self.tagWindow)
-        self.validationPoints = []
+        self.validationPoints = dict([])
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
         # temp debug stuff
-        self.validationPoints = [[300.0, 1.0, 0.5, 0, 0, 0.5, -1531.8396900905138], [640.0, 1.0, 0.5, 0, 0, 0.5, -21601.13266411921], [980.0, 1.0, 0.5, 0, 0, 0.5, -46885.67107091208], [1320.0, 1.0, 0.5, 0, 0, 0.5, -75678.72390870145], [1660.0, 1.0, 0.5, 0, 0, 0.5, -107216.53913730988], [2000.0, 1.0, 0.5, 0, 0, 0.5, -141093.38905291763]]
+        self.validationPoints = dict([
+                                      (0,dict([('state',[300.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-1531.8396900905138)])),
+                                      (1,dict([('state',[640.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-21601.13266411921)])),
+                                      (2,dict([('state',[980.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-46885.67107091208)])),
+                                      (3,dict([('state',[1320.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-75678.72390870145)])),
+                                      (4,dict([('state',[1660.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-107216.53913730988)])),
+                                      (5,dict([('state',[2000.0, 1.0, 0.5, 0, 0, 0.5]),('gibbs',-141093.38905291763)])),
+                                     ])
         self.tagWindow.valid = True
     def close(self):
         for child in self.children:

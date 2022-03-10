@@ -122,8 +122,9 @@ class PointValidationWindow:
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
         if event == 'Accept':
+            nExistingPoints = len(self.points)
             # use newpoints to accumulate points entered here
-            newpoints = []
+            newpoints = dict([])
             temp, status = self.validEntry(values[f'-temp{0}-'])
             if not (status == 0 and temp >= 300):
                 print('Invalid temperature in line 0')
@@ -139,7 +140,7 @@ class PointValidationWindow:
             if not max(concentrations) > 0:
                 print('Need at least one element present')
                 return
-            newpoints.append([temp,pres]+concentrations)
+            newpoints[nExistingPoints] = dict([('state',[temp,pres]+concentrations)])
             for i in range(1,self.npoints):
                 lastTemp = temp
                 lastPres = pres
@@ -167,7 +168,7 @@ class PointValidationWindow:
                 if not max(concentrations) > 0:
                     print('Need at least one element present')
                     return
-                newpoints.append([temp,pres]+concentrations)
+                newpoints[nExistingPoints + i] = dict([('state',[temp,pres]+concentrations)])
             # Make window to enter reference data
             headerLayout = [[sg.Text('Gibbs Energy')]]
             rowLayout = [[sg.Input(key=f'-gibbs{i}-',size=inputSize)] for i in range(self.npoints)]
@@ -182,13 +183,13 @@ class PointValidationWindow:
                     for i in range(self.npoints):
                         try:
                             gibbs = float(values[f'-gibbs{i}-'])
-                            newpoints[i].append(gibbs)
+                            newpoints[nExistingPoints + i]['gibbs'] = gibbs
                         except ValueError:
                             print(f'Invalid entry {values[f"-gibbs{i}-"]}')
                             valid = False
                     if valid:
                         referenceWindow.close()
-                        self.points.extend(newpoints)
+                        self.points.update(newpoints)
                         self.writeFile()
                         self.close()
     def validEntry(self,value):
@@ -207,7 +208,6 @@ class PointValidationWindow:
                 outValue = 0
                 status = -1
         return outValue, status
-
     def writeFile(self):
         with open('validationPoints.ti', 'w') as inputFile:
             inputFile.write('! Optima-generated input file for validation points\n')
@@ -218,5 +218,5 @@ class PointValidationWindow:
             inputFile.write(f'nEl         = {len(self.elements)} \n')
             inputFile.write(f'iEl         = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
             inputFile.write(f'nCalc       = {len(self.points)}\n')
-            for point in self.points:
-                inputFile.write(f'{" ".join([str(point[i]) for i in range(len(self.elements)+2)])}\n')
+            for point in self.points.keys():
+                inputFile.write(f'{" ".join([str(self.points[point]["state"][i]) for i in range(len(self.elements)+2)])}\n')
