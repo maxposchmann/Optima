@@ -275,17 +275,24 @@ class EditDataWindow:
             [sg.Text('Validation Point Details')],
             [sg.Multiline(key='-details-', size=(50,10), no_scrollbar=True)],
             [sg.Text(key = '-status-')],
-            [sg.Text('Filter points', font='underline')],
+            [sg.Text('Change Values', font='underline')],
+            [sg.Text('Temperature'), sg.Input(key='-temp-',size=(inputSize,1))],
+            [sg.Text('Pressure'), sg.Input(key='-pres-',size=(inputSize,1))]]
+        outputColumn.extend([[sg.Text(f'{self.elements[i]} concentration'),sg.Input(key=f'-{self.elements[i]}-',size=(inputSize,1))] for i in range(len(self.elements))])
+        outputColumn.extend([[sg.Button('Edit Point', disabled = True), sg.Button('Delete Point', disabled = True)],
+            [sg.Text('Filter Points', font='underline')],
             [sg.Text('Temperature Range:')],
             [sg.Input(key='-tfilterlow-',size=(inputSize,1)),sg.Input(key='-tfilterhi-',size=(inputSize,1))],
             [sg.Button('Apply Filter')]
-        ]
+            ])
         self.sgw = sg.Window('Data inspection',
             [[sg.Pane([
                 sg.Column(dataColumn, element_justification='l', expand_x=True, expand_y=True),
                 sg.Column(outputColumn, element_justification='c', expand_x=True, expand_y=True)
             ], orientation='h', k='-PANE-')]],
             location = [0,0], finalize=True)
+        self.tlo = -np.Inf
+        self.thi = np.Inf
         self.getData()
         self.children = []
     def close(self):
@@ -299,31 +306,40 @@ class EditDataWindow:
         if event == sg.WIN_CLOSED or event == 'Exit':
             self.close()
         elif event == '-dataList-':
-            point = values['-dataList-'][0][0]
-            elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
+            self.point = values['-dataList-'][0][0]
+            elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[self.point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
             details = (
-                       f'Temperature: {self.points[point]["state"][0]:6.2f} K\n'
-                      +f'Pressure: {self.points[point]["state"][1]:6.2f} atm\n'
+                       f'Temperature: {self.points[self.point]["state"][0]:6.2f} K\n'
+                      +f'Pressure: {self.points[self.point]["state"][1]:6.2f} atm\n'
                       +elementDetails
-                      +f'Gibbs energy: {self.points[point]["gibbs"]:6.2f} J'
+                      +f'Gibbs energy: {self.points[self.point]["gibbs"]:6.2f} J'
                      )
             self.sgw['-details-'].update(details)
+            self.sgw.Element('Edit Point').Update(disabled = False)
+            self.sgw.Element('Delete Point').Update(disabled = False)
         elif event == 'Apply Filter':
-            tlo = -np.Inf
-            thi  = np.Inf
             try:
-                tlo = float(values['-tfilterlow-'])
+                self.tlo = float(values['-tfilterlow-'])
             except:
-                pass
+                if values['-tfilterlow-'] == '':
+                    self.tlo = -np.Inf
+                else:
+                    return
             try:
-                thi = float(values['-tfilterhi-'])
+                self.thi = float(values['-tfilterhi-'])
             except:
-                pass
-            self.getData(tlo = tlo, thi = thi)
-    def getData(self,tlo = -np.Inf, thi = np.Inf):
+                if values['-tfilterhi-'] == '':
+                    self.thi = np.Inf
+                else:
+                    return
+            self.getData()
+        elif event == 'Delete Point':
+            del self.points[self.point]
+            self.getData()
+    def getData(self):
         self.data = []
         for point in self.points.keys():
-            if tlo <= self.points[point]["state"][0] and thi >= self.points[point]["state"][0]:
+            if self.tlo <= self.points[point]["state"][0] and self.thi >= self.points[point]["state"][0]:
                 self.data.append([point, f'{self.points[point]["state"][0]:6.2f} K'
                                         +f'{self.points[point]["state"][1]:6.2f} atm'
                                  ])
