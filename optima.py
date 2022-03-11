@@ -70,7 +70,7 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
             print()
             print('Converged')
             print(f'{beta} after {iteration+1}')
-            break
+            return
 
         # Update the Broyden matrix:
         broydenUpdate(broydenMatrix, t, s)
