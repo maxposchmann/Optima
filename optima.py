@@ -57,6 +57,7 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
         try:
             f = functional(tags,beta)
         except OptimaException:
+            # if a calculation fails, try shrinking step drastically
             beta = 0.999 * betaOld + 0.001 * beta
             try:
                 f = functional(tags,beta)
@@ -89,7 +90,7 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
         steplength = 1
         # calculate update to coefficients
         try:
-            beta = directionVector(r, broydenMatrix, beta, l, steplength, s)
+            beta = directionVector(r, broydenMatrix, beta, l, steplength)
         except OptimaException:
             return
         print(f'Current coefficients: {beta}')
@@ -128,8 +129,8 @@ def broydenUpdate(broydenMatrix,dependent,objective):
             broydenMatrix[i][j] = broydenMatrix[i][j] + update[i] * objective[j]
 
 # New direction vector given current residual
-def directionVector(functional, broydenMatrix, coefficient, l, steplength, lastChange):
-    m = len(functional)
+def directionVector(residual, broydenMatrix, coefficient, l, steplength):
+    m = len(residual)
     n = len(coefficient)
 
     a = np.zeros([n,n])
@@ -147,7 +148,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength, lastC
     # Compute the right hand side vector:
     for j in range(n):
         for i in range(m):
-            b[j] = b[j] + broydenMatrix[i][j] * functional[i]
+            b[j] = b[j] + broydenMatrix[i][j] * residual[i]
         a[j][j] = a[j][j] + l
 
     # Call the linear equation solver:
@@ -156,8 +157,6 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength, lastC
         betaNew = np.zeros(n)
         # Print results to screen:
         for j in range(n):
-            if abs(x[j]) > 1e2 * abs(lastChange[j]):
-                x[j] = 1e2 * x[j] / (abs(x[j]) / abs(lastChange[j]))
             betaNew[j] = coefficient[j] + steplength * x[j]
         return betaNew
     except np.linalg.LinAlgError:
