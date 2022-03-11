@@ -59,7 +59,11 @@ def getPointValidationValues(tags, beta):
     m = len(list(data.keys()))
     f = np.zeros(m)
     for i in list(data.keys()):
-        f[int(i)-1] = data[i]['integral Gibbs energy']
+        try:
+            f[int(i)-1] = data[i]['integral Gibbs energy']
+        except KeyError:
+            print('Thermochimica calculation failed to converge')
+            os._exit(1)
     return f
 
 def createIntermediateDat(tags,filename):
