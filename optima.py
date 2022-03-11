@@ -56,7 +56,11 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
         try:
             f = functional(tags,beta)
         except OptimaException:
-            return
+            beta = 0.999 * betaOld + 0.001 * beta
+            try:
+                f = functional(tags,beta)
+            except OptimaException:
+                return
 
         # residuals and deltas
         s = beta - betaOld
@@ -84,7 +88,7 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
         steplength = 1
         # calculate update to coefficients
         try:
-            beta = directionVector(r, broydenMatrix, beta, l, steplength)
+            beta = directionVector(r, broydenMatrix, beta, l, steplength, s)
         except OptimaException:
             return
         print(f'Current coefficients: {beta}')
@@ -123,7 +127,7 @@ def broydenUpdate(broydenMatrix,dependent,objective):
             broydenMatrix[i][j] = broydenMatrix[i][j] + update[i] * objective[j]
 
 # New direction vector given current residual
-def directionVector(functional, broydenMatrix, coefficient, l, steplength):
+def directionVector(functional, broydenMatrix, coefficient, l, steplength, lastChange):
     m = len(functional)
     n = len(coefficient)
 
@@ -151,6 +155,8 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         betaNew = np.zeros(n)
         # Print results to screen:
         for j in range(n):
+            if abs(x[j]) > 1e2 * abs(lastChange[j]):
+                x[j] = 1e2 * x[j] / (abs(x[j]) / abs(lastChange[j]))
             betaNew[j] = coefficient[j] + steplength * x[j]
         return betaNew
     except np.linalg.LinAlgError:
