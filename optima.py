@@ -42,14 +42,42 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     norm = functionalNorm(r)
 
     # now change to initial value 1, then enter loop
-    beta = np.array([tags[tag][1] for tag in tags])
+    betaNew = np.array([tags[tag][1] for tag in tags])
     # ensure initial values don't repeat
     for i in range(n):
-        if beta[i] == betaOld[i]:
-            if beta[i] == 0:
-                beta[i] = -7
+        if betaNew[i] == betaOld[i]:
+            if betaNew[i] == 0:
+                beta[i] = -1**i * (7 * i + 1)
             else:
                 beta[i] = 1.007 * betaOld[i]
+        else:
+            beta[i] = betaNew[i]
+        try:
+            f = functional(tags,beta)
+        except OptimaException:
+            # if a calculation fails, try shrinking step drastically
+            beta = 0.999 * betaOld + 0.001 * beta
+            try:
+                f = functional(tags,beta)
+            except OptimaException:
+                return
+        # residuals and deltas
+        s = beta - betaOld
+        r = f - y
+        t = rOld - r
+
+        # Update vectors for succeeding iteration:
+        betaOld = copy.deepcopy(beta)
+        rOld = copy.deepcopy(r)
+
+        # Update the Broyden matrix:
+        broydenUpdate(broydenMatrix, t, s)
+
+    # calculate update to coefficients
+    try:
+        beta = directionVector(r, broydenMatrix, beta, 1, 1)
+    except OptimaException:
+        return
 
     for iteration in range(maxIts):
         # calculate the functional values
