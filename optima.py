@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 # Levenberg-Marquardt non-linear optimizer using Broyden approximation for Jacobian.
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
@@ -28,7 +29,7 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
 
     # beta is array of coefficients, start with initial value 0
     beta = np.array([tags[tag][0] for tag in tags])
-    betaOld = beta
+    betaOld = copy.deepcopy(beta)
 
     try:
         f = functional(tags,beta)
@@ -68,8 +69,8 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
         t = rOld - r
 
         # Update vectors for succeeding iteration:
-        betaOld = beta
-        rOld = r
+        betaOld = copy.deepcopy(beta)
+        rOld = copy.deepcopy(r)
 
         # Compute the functional norm:
         norm = functionalNorm(r)
