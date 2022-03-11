@@ -245,7 +245,18 @@ class ThermochimicaOptima:
             print('Data load failed')
             return
         if len(newPoints) > 0:
-            self.validationPoints.update(newPoints)
+            if len(self.validationPoints) == 0:
+                startIndex = 0
+            else:
+                startIndex = int(list(self.validationPoints.keys())[-1]) + 1
+            i = 0
+            oldKeys = list(newPoints.keys())
+            # create a new dict to edit the keys to avoid overlapping keys
+            rekeyedPoints = dict([])
+            for point in oldKeys:
+                rekeyedPoints[startIndex + i] = newPoints.pop(point)
+                i += 1
+            self.validationPoints.update(rekeyedPoints)
             print(f'{len(newPoints)} validation points loaded')
         else:
             print('No entries in validation JSON')

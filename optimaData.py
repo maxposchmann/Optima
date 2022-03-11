@@ -116,7 +116,10 @@ class PointValidationWindow:
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
         if event == 'Accept':
-            nExistingPoints = len(self.points)
+            if len(self.points) == 0:
+                startIndex = 0
+            else:
+                startIndex = int(list(self.points.keys())[-1]) + 1
             # use newpoints to accumulate points entered here
             newpoints = dict([])
             temp, status = self.validEntry(values[f'-temp{0}-'])
@@ -134,7 +137,7 @@ class PointValidationWindow:
             if not max(concentrations) > 0:
                 print('Need at least one element present')
                 return
-            newpoints[nExistingPoints] = dict([('state',[temp,pres]+concentrations)])
+            newpoints[startIndex] = dict([('state',[temp,pres]+concentrations)])
             for i in range(1,self.npoints):
                 lastTemp = temp
                 lastPres = pres
@@ -162,7 +165,7 @@ class PointValidationWindow:
                 if not max(concentrations) > 0:
                     print('Need at least one element present')
                     return
-                newpoints[nExistingPoints + i] = dict([('state',[temp,pres]+concentrations)])
+                newpoints[startIndex + i] = dict([('state',[temp,pres]+concentrations)])
             # Make window to enter reference data
             headerLayout = [[sg.Text('Gibbs Energy')]]
             rowLayout = [[sg.Input(key=f'-gibbs{i}-',size=inputSize)] for i in range(self.npoints)]
@@ -177,7 +180,7 @@ class PointValidationWindow:
                     for i in range(self.npoints):
                         try:
                             gibbs = float(values[f'-gibbs{i}-'])
-                            newpoints[nExistingPoints + i]['gibbs'] = gibbs
+                            newpoints[startIndex + i]['gibbs'] = gibbs
                         except ValueError:
                             print(f'Invalid entry {values[f"-gibbs{i}-"]}')
                             valid = False
