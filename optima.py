@@ -30,8 +30,10 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     beta = np.array([tags[tag][0] for tag in tags])
     betaOld = beta
 
-    f = functional(tags,beta)
-
+    try:
+        f = functional(tags,beta)
+    except OptimaException:
+        return
     r = f - y
     rOld = r
 
@@ -44,14 +46,17 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     for i in range(n):
         if beta[i] == betaOld[i]:
             if beta[i] == 0:
-                beta[i] = 7
+                beta[i] = -7
             else:
                 beta[i] = 1.007 * betaOld[i]
 
     for iteration in range(maxIts):
         # calculate the functional values
         # leave this call straightforward: want to be able to swap this function for any other black box
-        f = functional(tags,beta)
+        try:
+            f = functional(tags,beta)
+        except OptimaException:
+            return
 
         # residuals and deltas
         s = beta - betaOld
@@ -78,7 +83,10 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
         l = 1/(iteration+1)**2
         steplength = 1
         # calculate update to coefficients
-        beta = directionVector(r, broydenMatrix, beta, l, steplength)
+        try:
+            beta = directionVector(r, broydenMatrix, beta, l, steplength)
+        except OptimaException:
+            return
         print(f'Current coefficients: {beta}')
     print('Reached maximum iterations without converging')
 
@@ -147,6 +155,7 @@ def directionVector(functional, broydenMatrix, coefficient, l, steplength):
         return betaNew
     except np.linalg.LinAlgError:
         print('There was a problem in solving the system of linear equations.')
+        raise OptimaException
 
 # Bayesian optimization
 # arguments match those in LevenbergMarquardtBroyden so a common interface can be used
@@ -187,8 +196,11 @@ def Bayesian(validationPoints,tags,functional,maxIts,tol):
         return score
 
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
-    optimizer = BayesianOptimization(f = functionalR2, pbounds = tags)
-    optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
+    try:
+        optimizer = BayesianOptimization(f = functionalR2, pbounds = tags)
+        optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
+    except OptimaException:
+        return
     # format for output
     results = list(optimizer.max['params'].items())
 
@@ -196,3 +208,6 @@ def Bayesian(validationPoints,tags,functional,maxIts,tol):
     for i in range(n):
         print(f'{results[i][0]} = {results[i][1]}')
     print(f'f(x) = {optimizer.max["target"]}')
+
+class OptimaException(Exception):
+    pass

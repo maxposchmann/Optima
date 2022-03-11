@@ -63,7 +63,7 @@ def getPointValidationValues(tags, beta):
             f[int(i)-1] = data[i]['integral Gibbs energy']
         except KeyError:
             print('Thermochimica calculation failed to converge')
-            os._exit(1)
+            raise optima.OptimaException
     return f
 
 def createIntermediateDat(tags,filename):
