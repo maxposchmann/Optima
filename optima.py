@@ -25,7 +25,11 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     broydenMatrix = np.ones([m,n])
 
     # y is dependent true values from validation data set
-    y = np.array([validationPoints[pointLabel]['gibbs'] for pointLabel in validationPoints.keys()])
+    y = []
+    for pointLabel in validationPoints.keys():
+        for key in validationPoints[pointLabel]['values'].keys():
+            y.append(validationPoints[pointLabel]['values'][key])
+    y = np.array(y)
 
     # beta is array of coefficients, start with initial value 0
     betaInit0 = np.array([tags[tag][0] for tag in tags])
@@ -196,7 +200,11 @@ def Bayesian(validationPoints,tags,functional,maxIts,tol):
             return
 
     # y is dependent true values from validation data set
-    y = np.array([validationPoints[pointLabel]['gibbs'] for pointLabel in validationPoints.keys()])
+    y = []
+    for pointLabel in validationPoints.keys():
+        for key in validationPoints[pointLabel]['values'].keys():
+            y.append(validationPoints[pointLabel]['values'][key])
+    y = np.array(y)
 
     # Use provided functional to get trial values, then calculate R2 score
     # Need to take an unknown number of tags+values pairs as arguments.

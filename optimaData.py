@@ -180,7 +180,7 @@ class PointValidationWindow:
                     for i in range(self.npoints):
                         try:
                             gibbs = float(values[f'-gibbs{i}-'])
-                            newpoints[startIndex + i]['gibbs'] = gibbs
+                            newpoints[startIndex + i]['values'] = dict([('integral Gibbs energy',gibbs)])
                         except ValueError:
                             print(f'Invalid entry {values[f"-gibbs{i}-"]}')
                             valid = False

@@ -40,7 +40,7 @@ atomic_number_map = [
     'Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts', 'Og'
 ]
 
-def getPointValidationValues(tags, beta):
+def getPointValidationValues(validation, tags, beta):
     shutil.copy('optima-inter.dat','optima.dat')
     keys = list(tags.keys())
     for i in range(len(tags)):
@@ -56,14 +56,16 @@ def getPointValidationValues(tags, beta):
         print('Data load failed')
         return
 
-    m = len(list(data.keys()))
-    f = np.zeros(m)
-    for i in list(data.keys()):
-        try:
-            f[int(i)-1] = data[i]['integral Gibbs energy']
-        except KeyError:
+    validationKeys = list(validation.keys())
+    f = []
+    for i in range(len(validation)):
+        if len(data[str(i+1)].keys()) == 0:
             print('Thermochimica calculation failed to converge')
             raise optima.OptimaException
+        calcKey = validationKeys[i]
+        for key in validation[calcKey]['values'].keys():
+            f.append(data[str(i+1)][key])
+    f = np.array(f)
     return f
 
 def createIntermediateDat(tags,filename):
@@ -213,24 +215,27 @@ class ThermochimicaOptima:
             # Set method to Bayesian optimization
             self.method = optima.Bayesian
     def run(self):
-        # get problem dimensions
+        # Get problem dimensions
         m = len(self.validationPoints)
         n = len(self.tagWindow.tags)
-        # check that we have enough data to go ahead
+        # Check that we have enough data to go ahead
         if not self.tagWindow.valid:
             print('Initial estimates for coefficients not completed')
             return
         if m == 0:
             print('Validation points not completed')
             return
-        # write input file
+        # Write input file
         self.writeFile()
-        # call tag preprocessor
+        # Call tag preprocessor
         intertags = createIntermediateDat(self.tagWindow.tags,self.datafile)
-        # call Optima
+        # Use currying to package validationPoints with getPointValidationValues
+        def getValues(tags, beta):
+            return getPointValidationValues(self.validationPoints, tags, beta)
+        # Call Optima
         self.method(self.validationPoints,
                     intertags,
-                    getPointValidationValues,
+                    getValues,
                     self.maxIts,
                     self.tol)
     def saveValidation(self):
@@ -261,7 +266,7 @@ class ThermochimicaOptima:
                 rekeyedPoints[startIndex + i] = newPoints.pop(point)
                 i += 1
             self.validationPoints.update(rekeyedPoints)
-            print(f'{len(newPoints)} validation points loaded')
+            print(f'{len(rekeyedPoints)} validation points loaded')
         else:
             print('No entries in validation JSON')
     def writeFile(self):
@@ -329,7 +334,7 @@ class EditDataWindow:
                        f'Temperature: {self.points[self.point]["state"][0]:6.2f} K\n'
                       +f'Pressure: {self.points[self.point]["state"][1]:6.2f} atm\n'
                       +elementDetails
-                      +f'Gibbs energy: {self.points[self.point]["gibbs"]:6.2f} J'
+                      +f'Gibbs energy: {self.points[self.point]["values"]["integral Gibbs energy"]:6.2f} J'
                      )
             self.sgw['-details-'].update(details)
             self.sgw.Element('Edit Point').Update(disabled = False)
@@ -368,7 +373,7 @@ class EditDataWindow:
                 except ValueError:
                     pass
             try:
-                self.points[self.point]['gibbs'] = float(values['-gibbs-'])
+                self.points[self.point]["values"]['integral Gibbs energy'] = float(values['-gibbs-'])
             except ValueError:
                 pass
             self.getData()
