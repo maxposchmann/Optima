@@ -232,8 +232,14 @@ class ThermochimicaOptima:
         # Use currying to package validationPoints with getPointValidationValues
         def getValues(tags, beta):
             return getPointValidationValues(self.validationPoints, tags, beta)
+        # Setup validation array
+        y = []
+        for pointLabel in self.validationPoints.keys():
+            for key in self.validationPoints[pointLabel]['values'].keys():
+                y.append(self.validationPoints[pointLabel]['values'][key])
+        y = np.array(y)
         # Call Optima
-        self.method(self.validationPoints,
+        self.method(y,
                     intertags,
                     getValues,
                     self.maxIts,

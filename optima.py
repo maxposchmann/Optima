@@ -4,13 +4,13 @@ import copy
 # Levenberg-Marquardt non-linear optimizer using Broyden approximation for Jacobian.
 # Make this class general. Avoid to the greatest extent possible including any application-specific code.
 # Any methods required to call Thermochimica (or other) should be imported from another class.
-# validationPoints is a dict containing points with system state and values to compare.
+# y is dependent true values from validation data set.
 # tags is a dict containing coefficient names and two initial guesses for each
 # functional is a function that returns an array of values corresponding to the validationPoints
 # maxIts and tol are convergence parameters
-def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
+def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol):
     # get problem dimensions
-    m = len(validationPoints)
+    m = len(y)
     n = len(tags)
 
     # check that we have enough data to go ahead
@@ -23,13 +23,6 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
 
     # initialize Broyden matrix as 1s
     broydenMatrix = np.ones([m,n])
-
-    # y is dependent true values from validation data set
-    y = []
-    for pointLabel in validationPoints.keys():
-        for key in validationPoints[pointLabel]['values'].keys():
-            y.append(validationPoints[pointLabel]['values'][key])
-    y = np.array(y)
 
     # beta is array of coefficients, start with initial value 0
     betaInit0 = np.array([tags[tag][0] for tag in tags])
@@ -174,7 +167,7 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength):
 
 # Bayesian optimization
 # arguments match those in LevenbergMarquardtBroyden so a common interface can be used
-def Bayesian(validationPoints,tags,functional,maxIts,tol):
+def Bayesian(y,tags,functional,maxIts,tol):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
@@ -183,7 +176,7 @@ def Bayesian(validationPoints,tags,functional,maxIts,tol):
     from scipy.stats import norm
 
     # get problem dimensions
-    m = len(validationPoints)
+    m = len(y)
     n = len(tags)
 
     # check that we have enough data to go ahead
@@ -198,13 +191,6 @@ def Bayesian(validationPoints,tags,functional,maxIts,tol):
             print('Cannot run Bayesian solver with bound 1 >= bound 2')
             print(f'Check tag {tag}')
             return
-
-    # y is dependent true values from validation data set
-    y = []
-    for pointLabel in validationPoints.keys():
-        for key in validationPoints[pointLabel]['values'].keys():
-            y.append(validationPoints[pointLabel]['values'][key])
-    y = np.array(y)
 
     # Use provided functional to get trial values, then calculate R2 score
     # Need to take an unknown number of tags+values pairs as arguments.
