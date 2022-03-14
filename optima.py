@@ -29,8 +29,6 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
 
     # beta is array of coefficients, start with initial value 0
     betaInit0 = np.array([tags[tag][0] for tag in tags])
-
-    # now change to initial value 1, then enter loop
     betaInit1 = np.array([tags[tag][1] for tag in tags])
 
     for iteration in range(maxIts):
