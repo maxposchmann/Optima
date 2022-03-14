@@ -28,71 +28,43 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
     y = np.array([validationPoints[pointLabel]['gibbs'] for pointLabel in validationPoints.keys()])
 
     # beta is array of coefficients, start with initial value 0
-    beta = np.array([tags[tag][0] for tag in tags])
-    betaOld = copy.deepcopy(beta)
-
-    try:
-        f = functional(tags,beta)
-    except OptimaException:
-        return
-    r = f - y
-    rOld = r
-
-    # Compute the functional norm:
-    norm = functionalNorm(r)
+    betaInit0 = np.array([tags[tag][0] for tag in tags])
 
     # now change to initial value 1, then enter loop
-    betaNew = np.array([tags[tag][1] for tag in tags])
-    # ensure initial values don't repeat
-    for i in range(n):
-        if betaNew[i] == betaOld[i]:
-            if betaNew[i] == 0:
-                beta[i] = -1**i * (7 * i + 1)
-            else:
-                beta[i] = 1.007 * betaOld[i]
-        else:
-            beta[i] = betaNew[i]
-        try:
-            f = functional(tags,beta)
-        except OptimaException:
-            # if a calculation fails, try shrinking step drastically
-            beta = 0.999 * betaOld + 0.001 * beta
-            try:
-                f = functional(tags,beta)
-            except OptimaException:
-                return
-        # residuals and deltas
-        s = beta - betaOld
-        r = f - y
-        t = rOld - r
-
-        # Update vectors for succeeding iteration:
-        betaOld = copy.deepcopy(beta)
-        rOld = copy.deepcopy(r)
-
-        # Update the Broyden matrix:
-        broydenUpdate(broydenMatrix, t, s)
-
-    # calculate update to coefficients
-    try:
-        beta = directionVector(r, broydenMatrix, beta, 1, 1)
-    except OptimaException:
-        return
+    betaInit1 = np.array([tags[tag][1] for tag in tags])
 
     for iteration in range(maxIts):
-        # calculate the functional values
-        # leave this call straightforward: want to be able to swap this function for any other black box
+        if iteration == 0:
+            # Start with first initial guess
+            beta = copy.deepcopy(betaInit0)
+            betaOld = copy.deepcopy(beta)
+            rOld = np.zeros(m)
+        elif iteration < n + 1:
+            # Try second set of initial values one-by-one
+            # Ensure initial values don't repeat
+            i = iteration - 1
+            if betaInit1[i] == betaInit0[i]:
+                if betaInit1[i] == 0:
+                    # If everything is left blank, mix the values around a bit
+                    beta[i] = (-1)**i * (7 * i + 1)
+                else:
+                    # Otherwise try a small step from the value provided
+                    beta[i] = 1.007 * betaInit0[i]
+            else:
+                beta[i] = betaInit1[i]
+        # Calculate the functional values
+        # Leave this call straightforward: want to be able to swap this function for any other black box
         try:
             f = functional(tags,beta)
         except OptimaException:
-            # if a calculation fails, try shrinking step drastically
+            # If a calculation fails, try shrinking step drastically
             beta = 0.999 * betaOld + 0.001 * beta
             try:
                 f = functional(tags,beta)
             except OptimaException:
                 return
 
-        # residuals and deltas
+        # Residuals and deltas
         s = beta - betaOld
         r = f - y
         t = rOld - r
@@ -103,25 +75,31 @@ def LevenbergMarquardtBroyden(validationPoints,tags,functional,maxIts,tol):
 
         # Compute the functional norm:
         norm = functionalNorm(r)
-        print(f'Iteration {iteration}, Norm {norm}')
+        print(f'Iteration: {iteration + 1}')
+        print(f'Current coefficients: {beta}')
+        print(f'Norm: {norm}')
+        print()
         if norm < tol:
             # Converged
             print()
             print('Converged')
-            print(f'{beta} after {iteration+1}')
+            print(f'{beta} after {iteration + 1}')
             return
 
         # Update the Broyden matrix:
-        broydenUpdate(broydenMatrix, t, s)
-        # Compute the direction vector:
-        l = 1/(iteration+1)**2
-        steplength = 1
-        # calculate update to coefficients
-        try:
-            beta = directionVector(r, broydenMatrix, beta, l, steplength)
-        except OptimaException:
-            return
-        print(f'Current coefficients: {beta}')
+        if iteration > 0:
+            broydenUpdate(broydenMatrix, t, s)
+
+        # Update beta using direction vector only after initial steps
+        if iteration >= n - 1:
+            # Compute the direction vector:
+            l = 1/(iteration+1)**2
+            steplength = 1
+            # Calculate update to coefficients
+            try:
+                beta = directionVector(r, broydenMatrix, beta, l, steplength)
+            except OptimaException:
+                return
     print('Reached maximum iterations without converging')
 
 # Functional norm calculation
