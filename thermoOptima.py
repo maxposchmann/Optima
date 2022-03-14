@@ -248,9 +248,13 @@ class ThermochimicaOptima:
             return getPointValidationValues(self.validationPoints, tags, beta)
         # Setup validation array
         y = []
-        for pointLabel in self.validationPoints.keys():
-            for key in self.validationPoints[pointLabel]['values'].keys():
-                y.append(self.validationPoints[pointLabel]['values'][key])
+        validationKeys = list(self.validationPoints.keys())
+        for i in range(m):
+            calcValues = []
+            getParallelDictValues(self.validationPoints[validationKeys[i]]['values'],
+                                  self.validationPoints[validationKeys[i]]['values'],
+                                  calcValues)
+            y.extend(calcValues)
         y = np.array(y)
         # Call Optima
         self.method(y,
