@@ -62,11 +62,25 @@ def getPointValidationValues(validation, tags, beta):
         if len(data[str(i+1)].keys()) == 0:
             print('Thermochimica calculation failed to converge')
             raise optima.OptimaException
-        calcKey = validationKeys[i]
-        for key in validation[calcKey]['values'].keys():
-            f.append(data[str(i+1)][key])
+        # Get all comparison values per calculation
+        calcValues = []
+        getParallelDictValues(validation[validationKeys[i]]['values'],data[str(i+1)],calcValues)
+        f.extend(calcValues)
     f = np.array(f)
     return f
+
+# Method to extract values from dict measured which has parallel structure to dict validation
+# measured must contain all keys that appear in validation
+# Returns array values of all values in validation corresponding to endpoints in validation
+def getParallelDictValues(validation,measured,values):
+    if type(validation) is dict:
+        # it's a dict!
+        for key in validation.keys():
+            # keep digging
+            getParallelDictValues(validation[key],measured[key],values)
+    else:
+        # it's a val!
+        values.append(measured)
 
 def createIntermediateDat(tags,filename):
     shutil.copy(filename,'optima-inter.dat')
