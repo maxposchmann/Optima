@@ -8,7 +8,7 @@ import copy
 # tags is a dict containing coefficient names and two initial guesses for each
 # functional is a function that returns an array of values corresponding to the validationPoints
 # maxIts and tol are convergence parameters
-def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol):
+def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
     # get problem dimensions
     m = len(y)
     n = len(tags)
@@ -53,7 +53,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol):
             steplength = 1
             # Calculate update to coefficients
             try:
-                beta = directionVector(r, broydenMatrix, beta, l, steplength)
+                beta = directionVector(r, broydenMatrix, beta, l, steplength, weight)
             except OptimaException:
                 return
 
@@ -133,7 +133,7 @@ def broydenUpdate(broydenMatrix,dependent,objective):
             broydenMatrix[i][j] = broydenMatrix[i][j] + update[i] * objective[j]
 
 # New direction vector given current residual
-def directionVector(residual, broydenMatrix, coefficient, l, steplength):
+def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight):
     m = len(residual)
     n = len(coefficient)
 
@@ -145,7 +145,7 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength):
         for i in range(j,n):
             # Compute the coefficient for the A matrix:
             for k in range(m):
-                a[i][j] += broydenMatrix[k][i] * broydenMatrix[k][j]
+                a[i][j] += broydenMatrix[k][i] * broydenMatrix[k][j] * weight[k]
             # Apply symmetry:
             a[j][i] = a[i][j]
 
@@ -169,7 +169,7 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength):
 
 # Bayesian optimization
 # arguments match those in LevenbergMarquardtBroyden so a common interface can be used
-def Bayesian(y,tags,functional,maxIts,tol):
+def Bayesian(y,tags,functional,maxIts,tol,weight):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
@@ -199,7 +199,7 @@ def Bayesian(y,tags,functional,maxIts,tol):
     def functionalR2(**pairs):
         beta = list(pairs.values())
         f = functional(tags, beta)
-        score = r2_score(y, f)
+        score = r2_score(y, f, sample_weight = weight)
         return score
 
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.

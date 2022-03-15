@@ -243,12 +243,14 @@ class ThermochimicaOptima:
                                   calcValues)
             y.extend(calcValues)
         y = np.array(y)
+        weight = np.ones(len(y))
         # Call Optima
         self.method(y,
                     intertags,
                     getValues,
                     self.maxIts,
-                    self.tol)
+                    self.tol,
+                    weight)
     def saveValidation(self):
         if len(self.validationPoints) == 0:
             print('Cannot save empty validation set')
