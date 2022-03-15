@@ -115,8 +115,8 @@ class ThermochimicaOptima:
                         [sg.Button('Add Validation Data')],
                         [sg.Button('Clear Validation Data')],
                         [sg.Button('Edit Validation Data')],
-                        [sg.Button('Save Validation Data')],
-                        [sg.Button('Load Validation Data')],
+                        [sg.Button('Save Validation Data'), sg.Input(key='-saveValidationName-',size=inputSize), sg.Text('.json')],
+                        [sg.Button('Load Validation Data'), sg.Input(key='-loadValidationName-',size=inputSize), sg.Text('.json')],
                         [sg.Button('Run')]]
         methodLayout = [[sg.Text('Select Optimization Method:')],
                         [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
@@ -182,9 +182,17 @@ class ThermochimicaOptima:
             editDataWindow = EditDataWindow(self.validationPoints,self.elements)
             self.children.append(editDataWindow)
         if event == 'Save Validation Data':
-            self.saveValidation()
+            if values['-saveValidationName-'] == '':
+                filename = 'validationData.json'
+            else:
+                filename = f'{values["-saveValidationName-"]}.json'
+            self.saveValidation(filename)
         if event == 'Load Validation Data':
-            self.loadValidation()
+            if values['-loadValidationName-'] == '':
+                filename = 'validationData.json'
+            else:
+                filename = f'{values["-loadValidationName-"]}.json'
+            self.loadValidation(filename)
         if event == 'Run':
             try:
                 if values['-tol-'] == '':
@@ -260,14 +268,14 @@ class ThermochimicaOptima:
                     self.maxIts,
                     self.tol,
                     weight)
-    def saveValidation(self):
+    def saveValidation(self, filename):
         if len(self.validationPoints) == 0:
             print('Cannot save empty validation set')
             return
-        with open('validationData.json', 'w') as outfile:
+        with open(filename, 'w') as outfile:
             json.dump(self.validationPoints, outfile, indent=4)
-    def loadValidation(self):
-        jsonFile = open('validationData.json',)
+    def loadValidation(self, filename):
+        jsonFile = open(filename,)
         try:
             newPoints = json.load(jsonFile)
             jsonFile.close()
