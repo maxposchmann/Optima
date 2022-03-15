@@ -8,7 +8,7 @@ import json
 import optimaData
 import optima
 import math
-import functools
+import dictTools
 
 timeout = 50
 inputSize = 16
@@ -64,23 +64,10 @@ def getPointValidationValues(validation, tags, beta):
             raise optima.OptimaException
         # Get all comparison values per calculation
         calcValues = []
-        getParallelDictValues(validation[validationKeys[i]]['values'],data[str(i+1)],calcValues)
+        dictTools.getParallelDictValues(validation[validationKeys[i]]['values'],data[str(i+1)],calcValues)
         f.extend(calcValues)
     f = np.array(f)
     return f
-
-# Method to extract values from dict measured which has parallel structure to dict validation
-# measured must contain all keys that appear in validation
-# Returns array values of all values in validation corresponding to endpoints in validation
-def getParallelDictValues(validation,measured,values):
-    if type(validation) is dict:
-        # it's a dict!
-        for key in validation.keys():
-            # keep digging
-            getParallelDictValues(validation[key],measured[key],values)
-    else:
-        # it's a val!
-        values.append(measured)
 
 def createIntermediateDat(tags,filename):
     shutil.copy(filename,'optima-inter.dat')
@@ -251,7 +238,7 @@ class ThermochimicaOptima:
         validationKeys = list(self.validationPoints.keys())
         for i in range(m):
             calcValues = []
-            getParallelDictValues(self.validationPoints[validationKeys[i]]['values'],
+            dictTools.getParallelDictValues(self.validationPoints[validationKeys[i]]['values'],
                                   self.validationPoints[validationKeys[i]]['values'],
                                   calcValues)
             y.extend(calcValues)
@@ -354,11 +341,17 @@ class EditDataWindow:
         elif event == '-dataList-':
             self.point = values['-dataList-'][0][0]
             elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[self.point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
+            valValues = []
+            dictTools.getParallelDictValues(self.points[self.point]['values'],self.points[self.point]['values'],valValues)
+            actStr = ''
+            valKeys = []
+            dictTools.getDictKeyString(self.points[self.point]['values'],actStr,valKeys)
+            validationDetails = '\n'.join([f'{valKeys[i]}: {str(valValues[i])}' for i in range(len(valValues))])
             details = (
                        f'Temperature: {self.points[self.point]["state"][0]:6.2f} K\n'
                       +f'Pressure: {self.points[self.point]["state"][1]:6.2f} atm\n'
                       +elementDetails
-                      +f'Gibbs energy: {self.points[self.point]["values"]["integral Gibbs energy"]:6.2f} J'
+                      +validationDetails
                      )
             self.sgw['-details-'].update(details)
             self.sgw.Element('Edit Point').Update(disabled = False)
