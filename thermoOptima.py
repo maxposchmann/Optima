@@ -233,17 +233,26 @@ class ThermochimicaOptima:
         # Use currying to package validationPoints with getPointValidationValues
         def getValues(tags, beta):
             return getPointValidationValues(self.validationPoints, tags, beta)
-        # Setup validation array
-        y = []
+        # Setup validation and weights arrays
+        validationPairs = []
         validationKeys = list(self.validationPoints.keys())
         for i in range(m):
             calcValues = []
             dictTools.getParallelDictValues(self.validationPoints[validationKeys[i]]['values'],
                                   self.validationPoints[validationKeys[i]]['values'],
                                   calcValues)
-            y.extend(calcValues)
-        y = np.array(y)
-        weight = np.ones(len(y))
+            validationPairs.extend(calcValues)
+        # Real problem size is number of value/weight pairs
+        m = len(validationPairs)
+        y = np.zeros(m)
+        weight = np.ones(m)
+        for i in range(m):
+            if isinstance(validationPairs[i],list):
+                y[i] = validationPairs[i][0]
+                weight[i] = validationPairs[i][1]
+            else:
+                y[i] = validationPairs[i]
+
         # Call Optima
         self.method(y,
                     intertags,
