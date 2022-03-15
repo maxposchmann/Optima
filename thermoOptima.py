@@ -304,7 +304,7 @@ class EditDataWindow:
         ]
         outputColumn = [
             [sg.Text('Validation Point Details')],
-            [sg.Multiline(key='-details-', size=(50,10), no_scrollbar=True)],
+            [sg.Multiline(key='-details-', size=(80,20))],
             [sg.Text(key = '-status-')],
             [sg.Text('Change Values', font='underline')],
             [sg.Text('Temperature'), sg.Input(key='-temp-',size=(inputSize,1))],
@@ -323,7 +323,7 @@ class EditDataWindow:
                 sg.Column(dataColumn, element_justification='l', expand_x=True, expand_y=True),
                 sg.Column(outputColumn, element_justification='c', expand_x=True, expand_y=True)
             ], orientation='h', k='-PANE-')]],
-            location = [0,0], finalize=True)
+            location = [100,0], finalize=True)
         self.tlo = -np.Inf
         self.thi = np.Inf
         self.getData()
@@ -348,9 +348,11 @@ class EditDataWindow:
             dictTools.getDictKeyString(self.points[self.point]['values'],actStr,valKeys)
             validationDetails = '\n'.join([f'{valKeys[i]}: {str(valValues[i])}' for i in range(len(valValues))])
             details = (
-                       f'Temperature: {self.points[self.point]["state"][0]:6.2f} K\n'
+                        'Calculated State:\n'
+                      +f'Temperature: {self.points[self.point]["state"][0]:6.2f} K\n'
                       +f'Pressure: {self.points[self.point]["state"][1]:6.2f} atm\n'
                       +elementDetails
+                      +'\nValidation Data:\n'
                       +validationDetails
                      )
             self.sgw['-details-'].update(details)
