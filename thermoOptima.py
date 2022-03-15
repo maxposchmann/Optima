@@ -239,8 +239,8 @@ class ThermochimicaOptima:
         for i in range(m):
             calcValues = []
             dictTools.getParallelDictValues(self.validationPoints[validationKeys[i]]['values'],
-                                  self.validationPoints[validationKeys[i]]['values'],
-                                  calcValues)
+                                            self.validationPoints[validationKeys[i]]['values'],
+                                            calcValues)
             validationPairs.extend(calcValues)
         # Real problem size is number of value/weight pairs
         m = len(validationPairs)
