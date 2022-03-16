@@ -45,9 +45,9 @@ def getPointValidationValues(validation, tags, beta):
     keys = list(tags.keys())
     for i in range(len(tags)):
         subprocess.call(['sed', '-i', '-e',  f's/<{keys[i]}>/{beta[i]}/g', 'optima.dat'])
-    subprocess.run(['../../thermochimicastuff/thermochimica/bin/RunCalculationList','validationPoints.ti'])
+    subprocess.run(['thermochimica/bin/RunCalculationList','validationPoints.ti'])
 
-    jsonFile = open('../../thermochimicastuff/thermochimica/thermoout.json',)
+    jsonFile = open('thermochimica/thermoout.json',)
     try:
         data = json.load(jsonFile)
         jsonFile.close()
