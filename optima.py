@@ -49,7 +49,6 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
                 beta[i] = betaInit1[i]
         else:
             # Otherwise use directionVector method to update beta
-            l = 1/(iteration+1)**2
             l = 1/(iteration + 1 - n)**2
             steplength = 1
             # Calculate update to coefficients
