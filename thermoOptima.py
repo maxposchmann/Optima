@@ -73,10 +73,10 @@ def createIntermediateDat(tags,filename):
     shutil.copy(filename,'optima-inter.dat')
     tagCheck = []
     for tag in tags:
-        if tags[tag][1]:
-            tagCheck.append((tag, tags[tag][0]))
+        if tags[tag]['optimize']:
+            tagCheck.append((tag, tags[tag]['initial']))
         else:
-            subprocess.call(['sed', '-i', '-e',  f's/<{tag}>/{tags[tag][0][0]}/g', 'optima-inter.dat'])
+            subprocess.call(['sed', '-i', '-e',  f's/<{tag}>/{tags[tag]["initial"][0]}/g', 'optima-inter.dat'])
     return dict(tagCheck)
 
 class ThermochimicaOptima:

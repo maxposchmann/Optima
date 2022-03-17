@@ -31,7 +31,7 @@ class TagWindow:
             print('No tags found')
             self.close()
         tags = list(dict.fromkeys(tags))
-        self.tags = dict([(tags[i], [[0,0],True]) for i in range(len(tags))])
+        self.tags = dict([(tags[i], dict([('initial',[0,0]),('optimize',True),('scale',1.0)])) for i in range(len(tags))])
         self.open()
         self.children = []
     def close(self):
@@ -42,47 +42,64 @@ class TagWindow:
             self.windowList.remove(self)
     def open(self):
         self.windowList.append(self)
-        tagMaxLength = 3
-        for tag in self.tags:
-            tagMaxLength = max(tagMaxLength,len(tag))
-        headingLayout = [[
-                          sg.Text('Tag',   size = [tagMaxLength,1],justification='left'),
-                          sg.Text('Initial Value 1',size = [inputSize,1],justification='center'),
-                          sg.Text('Initial Value 2',size = [inputSize,1],justification='center'),
-                          sg.Text('Optimize',justification='center'),
-                          sg.Text('Constant',justification='center')
-                        ]]
-        tagsLayout = []
-        for tag in self.tags:
-            tagsLayout.append([[
-                                sg.Text(tag,size = [tagMaxLength,1],justification='left'),
-                                sg.Input(key = f'{tag}-in1',size = [inputSize,1]),
-                                sg.Input(key = f'{tag}-in2',size = [inputSize,1]),
-                                sg.Radio('', f'{tag}-set', key = f'{tag}-opt', default = True, pad = (20,0)),
-                                sg.Radio('', f'{tag}-set', key = f'{tag}-con', default = False, pad = (20,0))
-                             ]])
-        buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
-        self.sgw = sg.Window('Coefficients', [headingLayout,tagsLayout,buttonLayout], location = [400,0], finalize=True)
+        dataColumn = [
+            [sg.Text('Tags')],
+            [sg.Listbox(values=list(self.tags.keys()), enable_events=True, size=(30, 20), key='-tagList-')]
+        ]
+        outputColumn = [
+            [sg.Text('Tag Details')],
+            [sg.Multiline(key='-details-', size=(60,5))],
+            [sg.Text('Edit Values', font='underline')],
+            [sg.Text('Values 1 and 2 are initial guesses for Broyden, and low/high bounds for Bayesian')],
+            [sg.Text('Value 1:'), sg.Input(key=f'-in1-',size=(inputSize,1))],
+            [sg.Text('Value 2:'), sg.Input(key=f'-in2-',size=(inputSize,1))],
+            [sg.Text('Should this tag be optimized or set to constant Value 1?')],
+            [sg.Radio('Optimize', f'-set-', key = f'-opt-', default = True,  pad = (20,0), enable_events = True),
+             sg.Radio('Constant', f'-set-', key = f'-con-', default = False, pad = (20,0), enable_events = True)],
+            [sg.Text('Optional scaling factor for tag, enter approximate order of magnitude if known')],
+            [sg.Text('Scale:'), sg.Input(key='-scale-',size=(inputSize,1))],
+            [sg.Button('Update'), sg.Button('Reset to Defaults')]
+            ]
+        self.sgw = sg.Window('Tag inspection',
+            [[sg.Pane([
+                sg.Column(dataColumn, element_justification='l', expand_x=True, expand_y=True),
+                sg.Column(outputColumn, element_justification='c', expand_x=True, expand_y=True)
+            ], orientation='h', k='-PANE-')]],
+            location = [400,0], finalize=True)
     def read(self):
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
-        if event == 'Accept':
-            for tag in self.tags.keys():
-                try:
-                    if values[f'{tag}-in1'] == '':
-                        v1 = 0
-                    else:
-                        v1 = float(values[f'{tag}-in1'])
-                    if values[f'{tag}-in2'] == '':
-                        v2 = 0
-                    else:
-                        v2 = float(values[f'{tag}-in2'])
-                    self.tags[tag] = [[v1,v2],values[f'{tag}-opt']]
-                except ValueError:
-                    print(f'Invalid initial value for {tag}')
-                    return
-            self.close()
+        elif event in ['Update',f'-opt-',f'-con-']:
+            try:
+                if not values[f'-in1-'] == '':
+                    self.tags[self.tag]['initial'][0] = float(values[f'-in1-'])
+                if not values[f'-in2-'] == '':
+                    self.tags[self.tag]['initial'][1] = float(values[f'-in2-'])
+                self.tags[self.tag]['optimize'] = values[f'-opt-']
+                if not values[f'-scale-'] == '':
+                    self.tags[self.tag]['scale'] = float(values[f'-scale-'])
+                self.updateDetails()
+            except ValueError:
+                print(f'Invalid initial value or scale')
+                return
+        elif event == '-tagList-':
+            self.tag = values['-tagList-'][0]
+            self.updateDetails()
+        elif event =='Reset to Defaults':
+            self.tags[self.tag]['initial'] = [0,0]
+            self.tags[self.tag]['optimize'] = True
+            self.tags[self.tag]['scale'] = 1.0
+            self.updateDetails()
+    def updateDetails(self):
+        details = (
+                   f'Value 1: {self.tags[self.tag]["initial"][0]:6.2f}\n'
+                  +f'Value 2: {self.tags[self.tag]["initial"][1]:6.2f}\n'
+                  +f'Scale: {self.tags[self.tag]["scale"]}'
+                 )
+        self.sgw['-details-'].update(details)
+        self.sgw['-opt-'].update(self.tags[self.tag]['optimize'])
+        self.sgw['-con-'].update(not self.tags[self.tag]['optimize'])
 
 class PointValidationWindow:
     def __init__(self,npoints,elements,points,windowList):
