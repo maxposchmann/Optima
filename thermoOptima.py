@@ -131,7 +131,6 @@ class ThermochimicaOptima:
         self.validationPoints = dict([])
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
-        self.tagWindow.valid = True
 
         # stuff for writing input file (hardcode values for now)
         self.datfile = f'{os.getcwd()}/optima.dat'
@@ -224,15 +223,15 @@ class ThermochimicaOptima:
             # Set method to Bayesian optimization
             self.method = optima.Bayesian
     def run(self):
-        # Get problem dimensions
+        # Get initial problem dimensions
         m = len(self.validationPoints)
         n = len(self.tagWindow.tags)
         # Check that we have enough data to go ahead
-        if not self.tagWindow.valid:
-            print('Initial estimates for coefficients not completed')
-            return
         if m == 0:
             print('Validation points not completed')
+            return
+        if n == 0:
+            print('Initial estimates for coefficients not completed')
             return
         # Write input file
         self.writeFile()

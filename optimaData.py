@@ -22,7 +22,6 @@ class TagWindow:
     def __init__(self,datafile,windowList):
         self.windowList = windowList
         self.datafile = datafile
-        self.valid = False
         tags = []
         with open(datafile) as f:
             data = f.readlines()
@@ -83,7 +82,6 @@ class TagWindow:
                 except ValueError:
                     print(f'Invalid initial value for {tag}')
                     return
-            self.valid = True
             self.close()
 
 class PointValidationWindow:
