@@ -54,7 +54,7 @@ def getPointValidationValues(validation, tags, beta):
     except:
         jsonFile.close()
         print('Data load failed')
-        return
+        raise optima.OptimaException
 
     validationKeys = list(validation.keys())
     f = []
