@@ -8,10 +8,16 @@ import copy
 # tags is a dict containing coefficient names and two initial guesses for each
 # functional is a function that returns an array of values corresponding to the validationPoints
 # maxIts and tol are convergence parameters
-def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
+def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = []):
     # get problem dimensions
     m = len(y)
     n = len(tags)
+
+    if not len(weight) == m:
+        weight = np.ones(m)
+
+    if not len(scale) == n:
+        scale = np.ones(n)
 
     # check that we have enough data to go ahead
     if n == 0:
@@ -59,6 +65,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
 
         # Calculate the functional values
         # Leave this call straightforward: want to be able to swap this function for any other black box
+        beta = beta * scale
         try:
             f = functional(tags,beta)
         except OptimaException:
@@ -70,14 +77,14 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
                 f = functional(tags,beta)
             except OptimaException:
                 return
-
+        beta = beta / scale
         # Compute the functional norm:
         rscale = 1e6
         r = rscale * (f - y) / abs(y)
         norm = functionalNorm(r / rscale)
         # Print current status
         print(f'Iteration: {iteration + 1}')
-        print(f'Current coefficients: {beta}')
+        print(f'Current coefficients: {beta * scale}')
         print(f'Norm: {norm}')
         print()
         # Check if converged
@@ -85,7 +92,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
             # Converged, print and return
             print()
             print('Converged')
-            print(f'{beta} after {iteration + 1}')
+            print(f'{beta * scale} after {iteration + 1}')
             return
 
         # Update the Broyden matrix:
@@ -170,7 +177,7 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
 
 # Bayesian optimization
 # arguments match those in LevenbergMarquardtBroyden so a common interface can be used
-def Bayesian(y,tags,functional,maxIts,tol,weight):
+def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
@@ -181,6 +188,12 @@ def Bayesian(y,tags,functional,maxIts,tol,weight):
     # get problem dimensions
     m = len(y)
     n = len(tags)
+
+    if not len(weight) == m:
+        weight = np.ones(m)
+
+    if not len(scale) == n:
+        scale = np.ones(n)
 
     # check that we have enough data to go ahead
     if n == 0:

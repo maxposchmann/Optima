@@ -273,7 +273,8 @@ class ThermochimicaOptima:
                     getValues,
                     self.maxIts,
                     self.tol,
-                    weight)
+                    weight = weight,
+                    scale = scale)
     def saveValidation(self, filename):
         if len(self.validationPoints) == 0:
             print('Cannot save empty validation set')
