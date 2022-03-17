@@ -25,8 +25,8 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight):
     broydenMatrix = np.ones([m,n])
 
     # beta is array of coefficients, start with initial value 0
-    betaInit0 = np.array([tags[tag][0] for tag in tags])
-    betaInit1 = np.array([tags[tag][1] for tag in tags])
+    betaInit0 = np.array([float(tags[tag][0]) for tag in tags])
+    betaInit1 = np.array([float(tags[tag][1]) for tag in tags])
 
     for iteration in range(maxIts):
         # Get beta
