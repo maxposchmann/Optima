@@ -178,12 +178,8 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
 # Bayesian optimization
 # Arguments match those in LevenbergMarquardtBroyden so a common interface can be used
 def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
-    from sklearn.svm import SVC
-    from sklearn.preprocessing import MinMaxScaler
-    from sklearn.model_selection import train_test_split
     from sklearn.metrics import r2_score
-    from bayes_opt import BayesianOptimization, UtilityFunction
-    from scipy.stats import norm
+    from bayes_opt import BayesianOptimization
 
     # Get problem dimensions
     m = len(y)
