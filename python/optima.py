@@ -209,7 +209,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
             return
 
     # Use provided functional to get trial values, then calculate R2 score
-    # Need to take an unknown number of tags+values pairs as arguments.
+    # Need to take an unknown number of tag+value pairs as arguments.
     def functionalR2(**pairs):
         beta = list(pairs.values())
         f = functional(tags, beta)
