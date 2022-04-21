@@ -8,7 +8,7 @@ import copy
 # tags is a dict containing coefficient names and two initial guesses for each
 # functional is a function that returns an array of values corresponding to the validationPoints
 # maxIts and tol are convergence parameters
-def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = []):
+def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams):
     # get problem dimensions
     m = len(y)
     n = len(tags)
@@ -177,10 +177,17 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
 
 # Bayesian optimization
 # Arguments match those in LevenbergMarquardtBroyden so a common interface can be used
-def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
+def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams):
     from sklearn.metrics import r2_score
     from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
     import matplotlib.pyplot as plt
+
+    # Set default values for optional parameters
+    acq = 'ucb'
+    init_points = 10
+    eta = 1
+    kappa_decay = 1
+    kappa_decay_delay = 0
 
     # Get problem dimensions
     m = len(y)
@@ -224,6 +231,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
         f = functional(tags, beta)
         score = r2_score(y, f, sample_weight = weight)
         return score
+
     def functionalNormNegative(**pairs):
         beta = list(pairs.values())
         f = functional(tags, beta)
@@ -234,10 +242,13 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
 
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
     try:
-        bounds_transformer = SequentialDomainReductionTransformer(gamma_osc = 0.01, gamma_pan = 1, eta = 1)
-        optimizer = BayesianOptimization(f = functionalR2, pbounds = tags, bounds_transformer = bounds_transformer)
-        optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0), kappa_decay = 0.9, kappa_decay_delay = 10)
+        bounds_transformer = SequentialDomainReductionTransformer(eta = eta)
         optimizer = BayesianOptimization(f = functionalNormNegative, pbounds = tags, bounds_transformer = bounds_transformer)
+        optimizer.maximize(init_points = init_points,
+                           n_iter = max(maxIts - init_points,0),
+                           acq = acq,
+                           kappa_decay = kappa_decay,
+                           kappa_decay_delay = kappa_decay_delay)
     except OptimaException:
         return
     except ValueError:
