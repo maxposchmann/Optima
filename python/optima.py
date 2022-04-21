@@ -225,7 +225,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
     except OptimaException:
         return
     except ValueError:
-        print('Internal bayes_opt error, run cancelled (retry may yield different results')
+        print('Internal bayes_opt error, run cancelled (retry may yield different results)')
     # Format for output
     results = list(optimizer.max['params'].items())
 
