@@ -179,7 +179,8 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
 # Arguments match those in LevenbergMarquardtBroyden so a common interface can be used
 def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
     from sklearn.metrics import r2_score
-    from bayes_opt import BayesianOptimization
+    from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
+    import matplotlib.pyplot as plt
 
     # Get problem dimensions
     m = len(y)
@@ -209,15 +210,22 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
     def functionalR2(**pairs):
         beta = list(pairs.values())
         f = functional(tags, beta)
-        score = r2_score(y, f, sample_weight = weight)
-        return score
+        # score = r2_score(y, f, sample_weight = weight)
+        # return score
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return 1/norm
 
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
     try:
-        optimizer = BayesianOptimization(f = functionalR2, pbounds = tags)
-        optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
+        bounds_transformer = SequentialDomainReductionTransformer(gamma_osc = 0.01, gamma_pan = 1, eta = 1)
+        optimizer = BayesianOptimization(f = functionalR2, pbounds = tags, bounds_transformer = bounds_transformer)
+        optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0), kappa_decay = 0.9, kappa_decay_delay = 10)
     except OptimaException:
         return
+    except ValueError:
+        print('Internal bayes_opt error, run cancelled (retry may yield different results')
     # Format for output
     results = list(optimizer.max['params'].items())
 
