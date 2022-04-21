@@ -200,10 +200,22 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
         print('No validation points')
         return
     for tag in tags:
-        if tags[tag][0] >= tags[tag][1]:
-            print('Cannot run Bayesian solver with bound 1 >= bound 2')
+        # Check and adjust tags to be legal
+        if tags[tag][0] > tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 > bound 2')
             print(f'Check tag {tag}')
-            return
+            print('Bounds will be swapped automatically')
+            tempbound = tags[tag][0]
+            tags[tag][0] = tags[tag][1]
+            tags[tag][1] = tempbound
+        elif tags[tag][0] == tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 == bound 2')
+            print(f'Check tag {tag}')
+            print('Upper bound will be increased automatically')
+            if tags[tag][1] == 0:
+                tags[tag][1] = 7
+            else:
+                tags[tag][1] += abs(tags[tag][1])
 
     # Use provided functional to get trial values, then calculate R2 score
     # Need to take an unknown number of tag+value pairs as arguments.
