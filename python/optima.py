@@ -176,7 +176,7 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
         raise OptimaException
 
 # Bayesian optimization
-# arguments match those in LevenbergMarquardtBroyden so a common interface can be used
+# Arguments match those in LevenbergMarquardtBroyden so a common interface can be used
 def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
     from sklearn.svm import SVC
     from sklearn.preprocessing import MinMaxScaler
@@ -185,7 +185,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
     from bayes_opt import BayesianOptimization, UtilityFunction
     from scipy.stats import norm
 
-    # get problem dimensions
+    # Get problem dimensions
     m = len(y)
     n = len(tags)
 
@@ -222,7 +222,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = []):
         optimizer.maximize(init_points = 10, n_iter = max(maxIts - 10,0))
     except OptimaException:
         return
-    # format for output
+    # Format for output
     results = list(optimizer.max['params'].items())
 
     print('Best result:')
