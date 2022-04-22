@@ -11,7 +11,9 @@ import math
 import dictTools
 
 timeout = 50
-inputSize = 16
+inputSize = 8,
+buttonSize = 20
+keyNameWidth = 18
 
 futureBlue = '#003C71'
 simcoeBlue = '#0077CA'
@@ -111,27 +113,27 @@ class ThermochimicaOptima:
                         print(el+' not in list') # if the name is bogus (or e(phase)), discard
                 self.elements = list(filter(lambda a: a != el, self.elements))
         windowList.append(self)
-        buttonLayout   = [[sg.Button('Edit Coefficients')],
-                        [sg.Button('Add Validation Data')],
-                        [sg.Button('Clear Validation Data')],
-                        [sg.Button('Edit Validation Data')],
-                        [sg.Button('Save Validation Data'), sg.Input(key='-saveValidationName-',size=inputSize), sg.Text('.json')],
-                        [sg.Button('Load Validation Data'), sg.Input(key='-loadValidationName-',size=inputSize), sg.Text('.json')],
-                        [sg.Button('Run')]]
+        buttonLayout   = [[sg.Button('Edit Coefficients', size = buttonSize)],
+                        [sg.Button('Add Validation Data', size = buttonSize)],
+                        [sg.Button('Clear Validation Data', size = buttonSize)],
+                        [sg.Button('Edit Validation Data', size = buttonSize)],
+                        [sg.Button('Save Validation Data', size = buttonSize), sg.Input(key='-saveValidationName-',size=16), sg.Text('.json')],
+                        [sg.Button('Load Validation Data', size = buttonSize), sg.Input(key='-loadValidationName-',size=16), sg.Text('.json')],
+                        [sg.Button('Run', size = buttonSize)]]
         broydenLayout  = sg.Column([
                                    [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
-                                   [sg.Text('Tolerance:'),sg.Input(key = '-tol-', size = inputSize)],
-                                   [sg.Text('Max Iterations:'),sg.Input(key = '-maxIts-', size = inputSize)]
-                                  ], expand_x=True, expand_y=True)
+                                   [sg.Text('Tolerance:', size = keyNameWidth),sg.Input(key = '-tol-', size = inputSize)],
+                                   [sg.Text('Max Iterations:', size = keyNameWidth),sg.Input(key = '-maxIts-', size = inputSize)]
+                                   ], expand_x=True, expand_y=True)
         bayesianLayout = sg.Column([
                                    [sg.Radio('Bayesian optimization', 'methods', default=False, enable_events=True, key='Bayes')],
-                                   [sg.Text('Max Iterations:'),sg.Input(key = '-totalIts-', size = inputSize)],
-                                   [sg.Text('Startup iterations:'),sg.Input(key = '-startIts-', size = inputSize)],
-                                   [sg.Text('Acquisition Function:'),sg.Combo(['Upper Confidence Bounds', 'Expected Improvement', 'Probability of Improvement'], default_value = 'Upper Confidence Bounds', key = '-acq-')],
-                                   [sg.Text('Eta:'),sg.Input(key = '-eta-', size = inputSize)],
-                                   [sg.Text('Kappa Decay:'),sg.Input(key = '-kappa_decay-', size = inputSize)],
-                                   [sg.Text('Kappa Decay Delay:'),sg.Input(key = '-kappa_decay_delay-', size = inputSize)]
-                                  ], expand_x=True, expand_y=True)
+                                   [sg.Text('Total Iterations:', size = keyNameWidth),sg.Input(key = '-totalIts-', size = inputSize)],
+                                   [sg.Text('Startup iterations:', size = keyNameWidth),sg.Input(key = '-startIts-', size = inputSize)],
+                                   [sg.Text('Acquisition Function:', size = keyNameWidth),sg.Combo(['Upper Confidence Bounds', 'Expected Improvement', 'Probability of Improvement'], default_value = 'Upper Confidence Bounds', key = '-acq-')],
+                                   [sg.Text('Eta:', size = keyNameWidth),sg.Input(key = '-eta-', size = inputSize)],
+                                   [sg.Text('Kappa Decay:', size = keyNameWidth),sg.Input(key = '-kappa_decay-', size = inputSize)],
+                                   [sg.Text('Kappa Decay Delay:', size = keyNameWidth),sg.Input(key = '-kappa_decay_delay-', size = inputSize)]
+                                   ], expand_x=True, expand_y=True)
         methodLayout   = [[sg.Text('Select Optimization Method:')],[broydenLayout,bayesianLayout]]
         self.sgw = sg.Window('Optima', [buttonLayout,methodLayout], location = [0,0], finalize=True)
         self.children = []

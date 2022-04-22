@@ -65,7 +65,7 @@ class TagWindow:
                 sg.Column(dataColumn, element_justification='l', expand_x=True, expand_y=True),
                 sg.Column(outputColumn, element_justification='c', expand_x=True, expand_y=True)
             ], orientation='h', k='-PANE-')]],
-            location = [400,0], finalize=True)
+            location = [700,0], finalize=True)
     def read(self):
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
