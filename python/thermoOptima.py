@@ -111,19 +111,29 @@ class ThermochimicaOptima:
                         print(el+' not in list') # if the name is bogus (or e(phase)), discard
                 self.elements = list(filter(lambda a: a != el, self.elements))
         windowList.append(self)
-        buttonLayout = [[sg.Button('Edit Coefficients')],
+        buttonLayout   = [[sg.Button('Edit Coefficients')],
                         [sg.Button('Add Validation Data')],
                         [sg.Button('Clear Validation Data')],
                         [sg.Button('Edit Validation Data')],
                         [sg.Button('Save Validation Data'), sg.Input(key='-saveValidationName-',size=inputSize), sg.Text('.json')],
                         [sg.Button('Load Validation Data'), sg.Input(key='-loadValidationName-',size=inputSize), sg.Text('.json')],
                         [sg.Button('Run')]]
-        methodLayout = [[sg.Text('Select Optimization Method:')],
-                        [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
-                        [sg.Radio('Bayesian optimization', 'methods', default=False, enable_events=True, key='Bayes')]]
-        settingsLayout = [[sg.Text('Tolerance:'),sg.Input(key = '-tol-', size = inputSize)],
-                          [sg.Text('Max Iterations:'),sg.Input(key = '-maxIts-', size = inputSize)]]
-        self.sgw = sg.Window('Optima', [buttonLayout,methodLayout,settingsLayout], location = [0,0], finalize=True)
+        broydenLayout  = sg.Column([
+                                   [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
+                                   [sg.Text('Tolerance:'),sg.Input(key = '-tol-', size = inputSize)],
+                                   [sg.Text('Max Iterations:'),sg.Input(key = '-maxIts-', size = inputSize)]
+                                  ], expand_x=True, expand_y=True)
+        bayesianLayout = sg.Column([
+                                   [sg.Radio('Bayesian optimization', 'methods', default=False, enable_events=True, key='Bayes')],
+                                   [sg.Text('Max Iterations:'),sg.Input(key = '-totalIts-', size = inputSize)],
+                                   [sg.Text('Startup iterations:'),sg.Input(key = '-startIts-', size = inputSize)],
+                                   [sg.Text('Acquisition Function:'),sg.Combo(['Upper Confidence Bounds', 'Expected Improvement', 'Probability of Improvement'], default_value = 'Upper Confidence Bounds', key = '-acq-')],
+                                   [sg.Text('Eta:'),sg.Input(key = '-eta-', size = inputSize)],
+                                   [sg.Text('Kappa Decay:'),sg.Input(key = '-kappa_decay-', size = inputSize)],
+                                   [sg.Text('Kappa Decay Delay:'),sg.Input(key = '-kappa_decay_delay-', size = inputSize)]
+                                  ], expand_x=True, expand_y=True)
+        methodLayout   = [[sg.Text('Select Optimization Method:')],[broydenLayout,bayesianLayout]]
+        self.sgw = sg.Window('Optima', [buttonLayout,methodLayout], location = [0,0], finalize=True)
         self.children = []
         # Automatically open a window for initial conditions
         self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
@@ -137,6 +147,7 @@ class ThermochimicaOptima:
         self.tunit = 'K'
         self.punit = 'atm'
         self.munit = 'moles'
+        self.extraParams = {}
     def close(self):
         for child in self.children:
             child.close()
@@ -205,16 +216,57 @@ class ThermochimicaOptima:
                 print('Invalid tolerance')
                 return
             try:
-                if values['-maxIts-'] == '':
-                    # let blank reset to default
-                    self.maxIts = 30
-                else:
-                    maxIts = int(values['-maxIts-'])
-                    if maxIts > 0:
-                        self.maxIts = maxIts
+                if self.method == optima.LevenbergMarquardtBroyden:
+                    if values['-maxIts-'] == '':
+                        # let blank reset to default
+                        self.maxIts = 30
+                    else:
+                        maxIts = int(values['-maxIts-'])
+                        if maxIts > 0:
+                            self.maxIts = maxIts
+                elif self.method == optima.Bayesian:
+                    if values['-totalIts-'] == '':
+                        # let blank reset to default
+                        self.maxIts = 30
+                    else:
+                        maxIts = int(values['-totalIts-'])
+                        if maxIts > 0:
+                            self.maxIts = maxIts
             except ValueError:
                 print('Invalid iterations')
                 return
+            # Bayesian already has default values for optional parameters, so only load valid values in
+            self.extraParams = {}
+            try:
+                start = int(values['-startIts-'])
+                if start > 0:
+                    self.extraParams['init_points'] = start
+            except ValueError:
+                pass
+            try:
+                eta = float(values['-eta-'])
+                if eta > 0 and eta <= 1:
+                    self.extraParams['eta'] = eta
+            except ValueError:
+                pass
+            try:
+                kappa_decay = float(values['-kappa_decay-'])
+                if kappa_decay > 0 and kappa_decay <= 1:
+                    self.extraParams['kappa_decay'] = kappa_decay
+            except ValueError:
+                pass
+            try:
+                kappa_decay_delay = int(values['-kappa_decay_delay-'])
+                if kappa_decay_delay >= 0:
+                    self.extraParams['kappa_decay_delay'] = kappa_decay_delay
+            except ValueError:
+                pass
+            if values['-acq-'] == 'Upper Confidence Bounds':
+                self.extraParams['acq'] = 'ucb'
+            elif values['-acq-'] == 'Expected Improvement':
+                self.extraParams['acq'] = 'ei'
+            elif values['-acq-'] == 'Probability of Improvement':
+                self.extraParams['acq'] = 'poi'
             self.run()
         if event == 'LMB':
             # Set method to Levenberg-Marquardt + Broyden
@@ -274,7 +326,8 @@ class ThermochimicaOptima:
                     self.maxIts,
                     self.tol,
                     weight = weight,
-                    scale = scale)
+                    scale = scale,
+                    **self.extraParams)
     def saveValidation(self, filename):
         if len(self.validationPoints) == 0:
             print('Cannot save empty validation set')

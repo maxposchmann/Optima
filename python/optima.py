@@ -188,6 +188,17 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
     eta = 1
     kappa_decay = 1
     kappa_decay_delay = 0
+    for param, value in extraParams.items():
+        if param == 'acq':
+            acq = value
+        elif param == 'init_points':
+            init_points = value
+        elif param == 'eta':
+            eta = value
+        elif param == 'kappa_decay':
+            kappa_decay = value
+        elif param == 'kappa_decay_delay':
+            kappa_decay_delay = value
 
     # Get problem dimensions
     m = len(y)
