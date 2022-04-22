@@ -186,6 +186,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
     acq = 'ucb'
     init_points = 10
     eta = 1
+    kappa = 2.576
     kappa_decay = 1
     kappa_decay_delay = 0
     for param, value in extraParams.items():
@@ -195,6 +196,8 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
             init_points = value
         elif param == 'eta':
             eta = value
+        elif param == 'kappa':
+            kappa = value
         elif param == 'kappa_decay':
             kappa_decay = value
         elif param == 'kappa_decay_delay':
@@ -258,6 +261,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
         optimizer.maximize(init_points = init_points,
                            n_iter = max(maxIts - init_points,0),
                            acq = acq,
+                           kappa = kappa,
                            kappa_decay = kappa_decay,
                            kappa_decay_delay = kappa_decay_delay)
     except OptimaException:

@@ -131,6 +131,7 @@ class ThermochimicaOptima:
                                    [sg.Text('Startup iterations:', size = keyNameWidth),sg.Input(key = '-startIts-', size = inputSize)],
                                    [sg.Text('Acquisition Function:', size = keyNameWidth),sg.Combo(['Upper Confidence Bounds', 'Expected Improvement', 'Probability of Improvement'], default_value = 'Upper Confidence Bounds', key = '-acq-')],
                                    [sg.Text('Eta:', size = keyNameWidth),sg.Input(key = '-eta-', size = inputSize)],
+                                   [sg.Text('Kappa:', size = keyNameWidth),sg.Input(key = '-kappa-', size = inputSize)],
                                    [sg.Text('Kappa Decay:', size = keyNameWidth),sg.Input(key = '-kappa_decay-', size = inputSize)],
                                    [sg.Text('Kappa Decay Delay:', size = keyNameWidth),sg.Input(key = '-kappa_decay_delay-', size = inputSize)]
                                    ], expand_x=True, expand_y=True)
@@ -249,6 +250,12 @@ class ThermochimicaOptima:
                 eta = float(values['-eta-'])
                 if eta > 0 and eta <= 1:
                     self.extraParams['eta'] = eta
+            except ValueError:
+                pass
+            try:
+                kappa = float(values['-kappa-'])
+                if kappa > 0:
+                    self.extraParams['kappa'] = kappa
             except ValueError:
                 pass
             try:
