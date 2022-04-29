@@ -182,7 +182,6 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
     import sys
     sys.path.append('.')
     from BayesianOptimization.bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
-    import matplotlib.pyplot as plt
 
     # Set default values for optional parameters
     acq = 'ucb'
