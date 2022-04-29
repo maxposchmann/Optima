@@ -254,10 +254,18 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
         norm = functionalNorm(r / rscale)
         return -norm
 
+    def functionalLogNorm(**pairs):
+        beta = list(pairs.values())
+        f = functional(tags, beta)
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return -np.log(norm)
+
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
     try:
         bounds_transformer = SequentialDomainReductionTransformer(eta = eta)
-        optimizer = BayesianOptimization(f = functionalNormNegative, pbounds = tags, bounds_transformer = bounds_transformer)
+        optimizer = BayesianOptimization(f = functionalLogNorm, pbounds = tags, bounds_transformer = bounds_transformer)
         optimizer.maximize(init_points = init_points,
                            n_iter = max(maxIts - init_points,0),
                            acq = acq,
