@@ -179,7 +179,9 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
 # Arguments match those in LevenbergMarquardtBroyden so a common interface can be used
 def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams):
     from sklearn.metrics import r2_score
-    from bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
+    import sys
+    sys.path.append('.')
+    from BayesianOptimization.bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
     import matplotlib.pyplot as plt
 
     # Set default values for optional parameters
@@ -265,13 +267,14 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
     # Create a BayesianOptimization optimizer and optimize the given black_box_function.
     try:
         bounds_transformer = SequentialDomainReductionTransformer(eta = eta)
-        optimizer = BayesianOptimization(f = functionalLogNorm, pbounds = tags, bounds_transformer = bounds_transformer)
+        optimizer = BayesianOptimization(f = functionalNormNegative, pbounds = tags, bounds_transformer = bounds_transformer)
         optimizer.maximize(init_points = init_points,
                            n_iter = max(maxIts - init_points,0),
                            acq = acq,
                            kappa = kappa,
                            kappa_decay = kappa_decay,
-                           kappa_decay_delay = kappa_decay_delay)
+                           kappa_decay_delay = kappa_decay_delay,
+                           y_limit = 0)
     except OptimaException:
         return
     except ValueError:
