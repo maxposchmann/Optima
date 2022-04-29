@@ -1,3 +1,6 @@
 [submodule "thermochimica"]
 	path = thermochimica
 	url = https://github.com/ORNL-CEES/thermochimica.git
+[submodule "BayesianOptimization"]
+	path = BayesianOptimization
+	url = https://github.com/maxposchmann/BayesianOptimization.git
