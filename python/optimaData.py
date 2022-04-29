@@ -34,6 +34,8 @@ class TagWindow:
         self.tags = dict([(tags[i], dict([('initial',[0,0]),('optimize',True),('scale',1.0)])) for i in range(len(tags))])
         self.open()
         self.children = []
+        self.tag = tags[0]
+        self.updateDetails()
     def close(self):
         for child in self.children:
             child.close()
