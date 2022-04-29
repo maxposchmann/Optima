@@ -282,7 +282,7 @@ class ThermochimicaOptima:
             self.method = optima.LevenbergMarquardtBroyden
         if event == 'Bayes':
             # Set method to Bayesian optimization
-            self.method = optima.Bayesian
+            self.method = optima.BoTorchBayesian
     def run(self):
         # Get initial problem dimensions
         m = len(self.validationPoints)

@@ -286,5 +286,82 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
         print(f'{results[i][0]} = {results[i][1]}')
     print(f'f(x) = {optimizer.max["target"]}')
 
+def BoTorchBayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams):
+    import torch
+    from botorch.models import SingleTaskGP
+    from botorch.fit import fit_gpytorch_model
+    from gpytorch.mlls import ExactMarginalLogLikelihood
+    from botorch.acquisition import UpperConfidenceBound
+    from botorch.optim import optimize_acqf
+
+    # Get problem dimensions
+    m = len(y)
+    n = len(tags)
+
+    if not len(weight) == m:
+        weight = np.ones(m)
+
+    if not len(scale) == n:
+        scale = np.ones(n)
+
+    # check that we have enough data to go ahead
+    if n == 0:
+        print('No tags with unknown values')
+        return
+    if m == 0:
+        print('No validation points')
+        return
+    for tag in tags:
+        # Check and adjust tags to be legal
+        if tags[tag][0] > tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 > bound 2')
+            print(f'Check tag {tag}')
+            print('Bounds will be swapped automatically')
+            tempbound = tags[tag][0]
+            tags[tag][0] = tags[tag][1]
+            tags[tag][1] = tempbound
+        elif tags[tag][0] == tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 == bound 2')
+            print(f'Check tag {tag}')
+            print('Upper bound will be increased automatically')
+            if tags[tag][1] == 0:
+                tags[tag][1] = 7
+            else:
+                tags[tag][1] += abs(tags[tag][1])
+
+    def functionalNormNegative(beta):
+        f = functional(tags, beta)
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return -norm
+
+    init_points = 10
+    train_X = torch.rand(init_points, n, dtype=torch.float64)
+    bounds = torch.stack([torch.zeros(n), torch.ones(n)])
+    j = 0
+    for tag in tags:
+        train_X[:,j] = tags[tag][0] + (tags[tag][1] - tags[tag][0]) * train_X[:,j]
+        bounds[0,j] = tags[tag][0]
+        bounds[1,j] = tags[tag][1]
+        j += 1
+    train_Y = torch.zeros(init_points,1)
+    for i in range(init_points):
+        train_Y[i] = functionalNormNegative(train_X[i,:])
+    print(train_X)
+    print(train_Y)
+    print(bounds)
+
+    gp = SingleTaskGP(train_X, train_Y)
+    mll = ExactMarginalLogLikelihood(gp.likelihood, gp)
+    fit_gpytorch_model(mll);
+
+    UCB = UpperConfidenceBound(gp, beta=0.1)
+
+    candidate, acq_value = optimize_acqf(
+        UCB, bounds=bounds, q=1, num_restarts=5, raw_samples=20,
+    )
+    print(f'{candidate} {acq_value}')
+
 class OptimaException(Exception):
     pass
