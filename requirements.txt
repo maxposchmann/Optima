@@ -1,0 +1,6 @@
+bayesian-optimization>=1.2.0
+numpy>=1.21.4
+PySimpleGUI>=4.55.1
+scikit-learn>=1.0.2
+scipy>=1.7.3
+simplejson>=3.16.0
