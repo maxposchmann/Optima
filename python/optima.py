@@ -336,6 +336,13 @@ def BoTorchBayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extr
         norm = functionalNorm(r / rscale)
         return -norm
 
+    def functionalLogNorm(beta):
+        f = functional(tags, beta)
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return -np.log(norm)
+
     init_points = 10
     train_X = torch.rand(init_points, n, dtype=torch.float64)
     bounds = torch.stack([torch.zeros(n), torch.ones(n)])
@@ -347,21 +354,31 @@ def BoTorchBayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extr
         j += 1
     train_Y = torch.zeros(init_points,1)
     for i in range(init_points):
-        train_Y[i] = functionalNormNegative(train_X[i,:])
+        train_Y[i] = functionalLogNorm(train_X[i,:])
     print(train_X)
     print(train_Y)
     print(bounds)
 
-    gp = SingleTaskGP(train_X, train_Y)
-    mll = ExactMarginalLogLikelihood(gp.likelihood, gp)
-    fit_gpytorch_model(mll);
+    bestNorm = -np.Inf
+    for i in range(maxIts-init_points):
+        gp = SingleTaskGP(train_X, train_Y)
+        mll = ExactMarginalLogLikelihood(gp.likelihood, gp)
+        fit_gpytorch_model(mll);
 
-    UCB = UpperConfidenceBound(gp, beta=0.1)
+        UCB = UpperConfidenceBound(gp, beta=3)
 
-    candidate, acq_value = optimize_acqf(
-        UCB, bounds=bounds, q=1, num_restarts=5, raw_samples=20,
-    )
-    print(f'{candidate} {acq_value}')
+        candidate, acq_value = optimize_acqf(UCB, bounds=bounds, q=1, num_restarts=5, raw_samples=20)
+        norm = functionalLogNorm(candidate[0])
+
+        print(f'Iteration {i + init_points + 1}: {candidate}, {np.exp(-norm)}')
+        train_X = torch.cat((train_X,candidate),0)
+        train_Y = torch.cat((train_Y,torch.tensor([[norm]])),0)
+        if norm > bestNorm:
+            bestNorm = norm
+            bestCand = candidate
+
+    print()
+    print(f'Best candidate is {bestCand} with norm {np.exp(-bestNorm)}')
 
 class OptimaException(Exception):
     pass
