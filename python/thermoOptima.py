@@ -227,7 +227,7 @@ class ThermochimicaOptima:
                         maxIts = int(values['-maxIts-'])
                         if maxIts > 0:
                             self.maxIts = maxIts
-                elif self.method == optima.Bayesian:
+                elif self.method in [optima.Bayesian, optima.BoTorchBayesian]:
                     if values['-totalIts-'] == '':
                         # let blank reset to default
                         self.maxIts = 30
