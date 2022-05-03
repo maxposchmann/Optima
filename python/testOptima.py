@@ -5,6 +5,7 @@ import optimaData
 import thermoOptima
 import dictTools
 import random
+import timeit
 
 # Choose files to use
 testDatFile = 'MoPd-testTemplate.dat'
@@ -21,6 +22,7 @@ elements = ['Pd', 'Ru', 'Tc', 'Mo']
 tol = 1e-4
 maxIts = 30
 nParams = 5
+nTests = 3
 
 # Read file with known coefficient values and calculate ranges for testing
 jsonFile = open(testParamFile,)
@@ -66,49 +68,55 @@ with open('validationPoints.ti', 'w') as inputFile:
     for point in validationPoints.keys():
         inputFile.write(f'{" ".join([str(validationPoints[point]["state"][i]) for i in range(len(elements)+2)])}\n')
 
-# Choose n parameters at random to use
-selectedParams = random.sample([*params],k=nParams)
-print(selectedParams)
+# Test loop
+testDetails = []
+for ti in range(nTests):
+    # Choose n parameters at random to use
+    selectedParams = random.sample([*params],k=nParams)
+    print(selectedParams)
 
-for param in params:
-    tagWindow.tags[param]['scale'] = params[param]['scale']
-    tagWindow.tags[param]['initial'][0] = params[param]['lob']
-    tagWindow.tags[param]['initial'][1] = params[param]['upb']
-    tagWindow.tags[param]['optimize'] = True
-    if param not in selectedParams:
-        tagWindow.tags[param]['optimize'] = False
-        tagWindow.tags[param]['initial'][0] = params[param]['value']
+    for param in params:
+        tagWindow.tags[param]['scale'] = params[param]['scale']
+        tagWindow.tags[param]['initial'][0] = params[param]['lob']
+        tagWindow.tags[param]['initial'][1] = params[param]['upb']
+        tagWindow.tags[param]['optimize'] = True
+        if param not in selectedParams:
+            tagWindow.tags[param]['optimize'] = False
+            tagWindow.tags[param]['initial'][0] = params[param]['value']
 
-# Call tag preprocessor
-intertags = thermoOptima.createIntermediateDat(tagWindow.tags,testDatFile)
-# Use currying to package validationPoints with getPointValidationValues
-def getValues(tags, beta):
-    return thermoOptima.getPointValidationValues(validationPoints, tags, beta)
-# Get validation value/weight pairs
-validationPairs = []
-validationKeys = list(validationPoints.keys())
-for i in range(m):
-    calcValues = []
-    dictTools.getParallelDictValues(validationPoints[validationKeys[i]]['values'],
-                                    validationPoints[validationKeys[i]]['values'],
-                                    calcValues)
-    validationPairs.extend(calcValues)
-# Real problem size is number of value/weight pairs x number of tags to be optimized
-m = len(validationPairs)
-n = len(intertags)
-# Setup validation and weights arrays
-y = np.zeros(m)
-weight = np.ones(m)
-for i in range(m):
-    if isinstance(validationPairs[i],list):
-        y[i] = validationPairs[i][0]
-        weight[i] = validationPairs[i][1]
-    else:
-        y[i] = validationPairs[i]
-weight = np.ones(m)
-scale = []
-for tag in intertags.keys():
-    scale.append(tagWindow.tags[tag]['scale'])
-scale = np.array(scale)
+    # Call tag preprocessor
+    intertags = thermoOptima.createIntermediateDat(tagWindow.tags,testDatFile)
+    # Use currying to package validationPoints with getPointValidationValues
+    def getValues(tags, beta):
+        return thermoOptima.getPointValidationValues(validationPoints, tags, beta)
+    # Get validation value/weight pairs
+    validationPairs = []
+    validationKeys = list(validationPoints.keys())
+    for i in range(m):
+        calcValues = []
+        dictTools.getParallelDictValues(validationPoints[validationKeys[i]]['values'],
+                                        validationPoints[validationKeys[i]]['values'],
+                                        calcValues)
+        validationPairs.extend(calcValues)
+    # Real problem size is number of value/weight pairs x number of tags to be optimized
+    m = len(validationPairs)
+    n = len(intertags)
+    # Setup validation and weights arrays
+    y = np.zeros(m)
+    weight = np.ones(m)
+    for i in range(m):
+        if isinstance(validationPairs[i],list):
+            y[i] = validationPairs[i][0]
+            weight[i] = validationPairs[i][1]
+        else:
+            y[i] = validationPairs[i]
+    weight = np.ones(m)
+    scale = []
+    for tag in intertags.keys():
+        scale.append(tagWindow.tags[tag]['scale'])
+    scale = np.array(scale)
 
-method(y,intertags,getValues,maxIts,tol,weight = weight,scale = scale,**extraParams)
+    st = timeit.timeit()
+    norm, iterations = method(y,intertags,getValues,maxIts,tol,weight = weight,scale = scale,**extraParams)
+    et = timeit.timeit()
+    testDetails.append(dict([('norm',norm),('iterations',iterations),('time',et-st)]))
