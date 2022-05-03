@@ -4,6 +4,7 @@ import optima
 import optimaData
 import thermoOptima
 import dictTools
+import random
 
 # Choose files to use
 testDatFile = 'MoPd-testTemplate.dat'
@@ -19,6 +20,7 @@ elements = ['Pd', 'Ru', 'Tc', 'Mo']
 # Set global optimization parameters
 tol = 1e-4
 maxIts = 30
+nParams = 3
 
 # Read file with known coefficient values and calculate ranges for testing
 jsonFile = open(testParamFile,)
@@ -64,11 +66,18 @@ with open('validationPoints.ti', 'w') as inputFile:
     for point in validationPoints.keys():
         inputFile.write(f'{" ".join([str(validationPoints[point]["state"][i]) for i in range(len(elements)+2)])}\n')
 
+# Choose n parameters at random to use
+selectedParams = random.choices([*params],k=nParams)
+print(selectedParams)
+
 for param in params:
-    if param in ['excess term 1-1','excess term 2-2']:
-        continue
-    tagWindow.tags[param]['optimize'] = False
-    tagWindow.tags[param]['initial'][0] = params[param]['value']
+    tagWindow.tags[param]['scale'] = params[param]['scale']
+    tagWindow.tags[param]['initial'][0] = params[param]['lob']
+    tagWindow.tags[param]['initial'][1] = params[param]['upb']
+    tagWindow.tags[param]['optimize'] = True
+    if param not in selectedParams:
+        tagWindow.tags[param]['optimize'] = False
+        tagWindow.tags[param]['initial'][0] = params[param]['value']
 
 # Call tag preprocessor
 intertags = thermoOptima.createIntermediateDat(tagWindow.tags,testDatFile)
