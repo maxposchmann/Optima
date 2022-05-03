@@ -9,7 +9,7 @@ import random
 # Choose files to use
 testDatFile = 'MoPd-testTemplate.dat'
 testParamFile = 'MoPd-values.json'
-validationTestsFile = 'validationData.json'
+validationTestsFile = 'generatedValidationPoints.json'
 
 # Set units
 tunit = 'K'
