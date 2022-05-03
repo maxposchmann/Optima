@@ -33,9 +33,9 @@ for param in params:
         scale = np.ceil(np.log10(abs(value)))
     else:
         scale = 1
-    params[param]['scale'] = scale
-    params[param]['lob'] = -10**scale
-    params[param]['upb'] = +10**scale
+    params[param]['scale'] = 10**scale
+    params[param]['lob'] = -(10**scale)
+    params[param]['upb'] = +(10**scale)
 
 
 # Load validation data
