@@ -93,7 +93,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
             print()
             print('Converged')
             print(f'{beta * scale} after {iteration + 1}')
-            return
+            return norm, iteration + 1
 
         # Update the Broyden matrix:
         if iteration > 0:
@@ -107,6 +107,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
         rOld = copy.deepcopy(r)
 
     print('Reached maximum iterations without converging')
+    return norm, iteration + 1
 
 # Functional norm calculation
 def functionalNorm(residual):
