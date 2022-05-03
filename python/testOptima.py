@@ -20,7 +20,7 @@ elements = ['Pd', 'Ru', 'Tc', 'Mo']
 # Set global optimization parameters
 tol = 1e-4
 maxIts = 30
-nParams = 3
+nParams = 5
 
 # Read file with known coefficient values and calculate ranges for testing
 jsonFile = open(testParamFile,)
@@ -67,7 +67,7 @@ with open('validationPoints.ti', 'w') as inputFile:
         inputFile.write(f'{" ".join([str(validationPoints[point]["state"][i]) for i in range(len(elements)+2)])}\n')
 
 # Choose n parameters at random to use
-selectedParams = random.choices([*params],k=nParams)
+selectedParams = random.sample([*params],k=nParams)
 print(selectedParams)
 
 for param in params:
