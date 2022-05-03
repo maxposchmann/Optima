@@ -493,9 +493,12 @@ class EditDataWindow:
                                  ])
         self.sgw['-dataList-'].update(self.data)
 
-
 windowList = []
-ThermochimicaOptima()
-while len(windowList) > 0:
-    for window in windowList:
-        window.read()
+def main():
+    ThermochimicaOptima()
+    while len(windowList) > 0:
+        for window in windowList:
+            window.read()
+
+if __name__ == "__main__":
+    main()
