@@ -5,7 +5,7 @@ import optimaData
 import thermoOptima
 import dictTools
 import random
-import timeit
+import time
 
 # Choose files to use
 testDatFile = 'MoPd-testTemplate.dat'
@@ -116,7 +116,7 @@ for ti in range(nTests):
         scale.append(tagWindow.tags[tag]['scale'])
     scale = np.array(scale)
 
-    st = timeit.timeit()
+    st = time.time()
     norm, iterations = method(y,intertags,getValues,maxIts,tol,weight = weight,scale = scale,**extraParams)
-    et = timeit.timeit()
     testDetails.append(dict([('norm',norm),('iterations',iterations),('time',et-st)]))
+    et = time.time()
