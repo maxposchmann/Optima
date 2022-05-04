@@ -7,23 +7,23 @@ import dictTools
 import random
 import time
 
+# Set global optimization parameters
+tol = 1e-4
+maxIts = 100
+nParams = 5
+nTests = 100
+
 # Choose files to use
 testDatFile = 'MoPd-testTemplate.dat'
 testParamFile = 'MoPd-values.json'
 validationTestsFile = 'generatedValidationPoints.json'
-outputFile = 'broyden-5vars-10tests.json'
+outputFile = f'broyden-{nParams}vars-{nTests}tests.json'
 
 # Set units
 tunit = 'K'
 punit = 'atm'
 munit = 'moles'
 elements = ['Pd', 'Ru', 'Tc', 'Mo']
-
-# Set global optimization parameters
-tol = 1e-4
-maxIts = 100
-nParams = 5
-nTests = 10
 
 # Read file with known coefficient values and calculate ranges for testing
 jsonFile = open(testParamFile,)
