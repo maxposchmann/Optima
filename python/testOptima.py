@@ -11,6 +11,7 @@ import time
 testDatFile = 'MoPd-testTemplate.dat'
 testParamFile = 'MoPd-values.json'
 validationTestsFile = 'generatedValidationPoints.json'
+outputFile = 'broyden-5vars-10tests.json'
 
 # Set units
 tunit = 'K'
@@ -20,9 +21,9 @@ elements = ['Pd', 'Ru', 'Tc', 'Mo']
 
 # Set global optimization parameters
 tol = 1e-4
-maxIts = 30
+maxIts = 100
 nParams = 5
-nTests = 3
+nTests = 10
 
 # Read file with known coefficient values and calculate ranges for testing
 jsonFile = open(testParamFile,)
@@ -38,7 +39,6 @@ for param in params:
     params[param]['scale'] = 10**scale
     params[param]['lob'] = -(10**scale)
     params[param]['upb'] = +(10**scale)
-
 
 # Load validation data
 jsonFile = open(validationTestsFile,)
@@ -69,7 +69,7 @@ with open('validationPoints.ti', 'w') as inputFile:
         inputFile.write(f'{" ".join([str(validationPoints[point]["state"][i]) for i in range(len(elements)+2)])}\n')
 
 # Test loop
-testDetails = []
+testDetails = dict([])
 for ti in range(nTests):
     # Choose n parameters at random to use
     selectedParams = random.sample([*params],k=nParams)
@@ -118,5 +118,8 @@ for ti in range(nTests):
 
     st = time.time()
     norm, iterations = method(y,intertags,getValues,maxIts,tol,weight = weight,scale = scale,**extraParams)
-    testDetails.append(dict([('norm',norm),('iterations',iterations),('time',et-st)]))
     et = time.time()
+    testDetails[ti] = dict([('norm',norm),('iterations',iterations),('time',et-st)])
+
+with open(outputFile, 'w') as outfile:
+    json.dump(testDetails, outfile, indent=2)
