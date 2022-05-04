@@ -35,7 +35,8 @@ for param in params:
     if value != 0:
         scale = np.ceil(np.log10(abs(value)))
     else:
-        scale = 1
+        # The only one of these is a T**3, so set for that case same as it would normally be
+        scale = -6
     params[param]['scale'] = 10**scale
     params[param]['lob'] = -(10**scale)
     params[param]['upb'] = +(10**scale)
