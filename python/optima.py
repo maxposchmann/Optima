@@ -274,7 +274,8 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
                            kappa = kappa,
                            kappa_decay = kappa_decay,
                            kappa_decay_delay = kappa_decay_delay,
-                           y_limit = 0)
+                           y_limit = 0,
+                           tol = -tol)
     except OptimaException:
         return
     except ValueError:
