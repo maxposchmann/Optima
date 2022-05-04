@@ -121,5 +121,7 @@ for ti in range(nTests):
     et = time.time()
     testDetails[ti] = dict([('norm',norm),('iterations',iterations),('time',et-st)])
 
+    print(f' ---- DONE {ti+1} ----')
+
 with open(outputFile, 'w') as outfile:
     json.dump(testDetails, outfile, indent=2)
