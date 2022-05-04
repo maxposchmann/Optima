@@ -288,7 +288,7 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
         print(f'{results[i][0]} = {results[i][1]}')
     print(f'f(x) = {optimizer.max["target"]}')
 
-    return -results[i][1], maxIts
+    return -results[i][1], optimizer.iteration + init_points
 
 class OptimaException(Exception):
     pass
