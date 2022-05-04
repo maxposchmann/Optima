@@ -77,8 +77,8 @@ for ti in range(nTests):
 
     for param in params:
         tagWindow.tags[param]['scale'] = params[param]['scale']
-        tagWindow.tags[param]['initial'][0] = params[param]['lob']
-        tagWindow.tags[param]['initial'][1] = params[param]['upb']
+        tagWindow.tags[param]['initial'][0] = params[param]['lob'] * (1 + 0.1 * random.random())
+        tagWindow.tags[param]['initial'][1] = params[param]['upb'] * (1 + 0.1 * random.random())
         tagWindow.tags[param]['optimize'] = True
         if param not in selectedParams:
             tagWindow.tags[param]['optimize'] = False
