@@ -93,7 +93,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
             print()
             print('Converged')
             print(f'{beta * scale} after {iteration + 1}')
-            return norm, iteration + 1
+            return norm, iteration + 1, beta * scale
 
         # Update the Broyden matrix:
         if iteration > 0:
@@ -107,7 +107,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
         rOld = copy.deepcopy(r)
 
     print('Reached maximum iterations without converging')
-    return norm, iteration + 1
+    return norm, iteration + 1, beta * scale
 
 # Functional norm calculation
 def functionalNorm(residual):
@@ -287,12 +287,14 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
     # Format for output
     results = list(optimizer.max['params'].items())
 
+    beta = []
     print('Best result:')
     for i in range(n):
         print(f'{results[i][0]} = {results[i][1]}')
+        beta.append(results[i][1])
     print(f'f(x) = {optimizer.max["target"]}')
 
-    return -results[i][1], optimizer.iteration + init_points
+    return -results[i][1], optimizer.iteration + init_points, beta
 
 class OptimaException(Exception):
     pass
