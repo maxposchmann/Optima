@@ -11,7 +11,7 @@ import time
 tol = 1e-4
 maxIts = 100
 nTests = 100
-for nParams in range(16,17):
+for nParams in range(1,17):
 
     # Choose files to use
     testDatFile = 'MoPd-testTemplate.dat'
@@ -118,7 +118,7 @@ for nParams in range(16,17):
         scale = np.array(scale)
 
         st = time.time()
-        norm, iterations = method(y,intertags,getValues,maxIts,tol,weight = weight,scale = scale,**extraParams)
+        norm, iterations, beta = method(y,intertags,getValues,maxIts,tol,weight = weight,scale = scale,**extraParams)
         et = time.time()
         testDetails[ti] = dict([('norm',norm),('iterations',iterations),('time',et-st)])
 
