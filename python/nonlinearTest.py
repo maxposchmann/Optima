@@ -62,4 +62,5 @@ for n in range(nTests):
         #         tags[str(p)] = [beta[p],beta[p]]
     print(trueParams)
     print(totalIts)
+    print(f' ---- DONE {ti+1}, PASSED {nSuccess} ----')
 print(f'{nSuccess} successes out of {nTests}')
