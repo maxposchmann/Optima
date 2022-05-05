@@ -155,6 +155,8 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
             # Compute the coefficient for the A matrix:
             for k in range(m):
                 a[i][j] += broydenMatrix[k][i] * broydenMatrix[k][j] * weight[k]
+                if abs(a[i][j]) > 1e20:
+                    steplength = 1e-6
             # Apply symmetry:
             a[j][i] = a[i][j]
 
@@ -162,6 +164,8 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
     for j in range(n):
         for i in range(m):
             b[j] = b[j] + broydenMatrix[i][j] * residual[i]
+            if abs(b[j]) > 1e20:
+                steplength = 1e-6
         a[j][j] = a[j][j] + l
 
     # Call the linear equation solver:
