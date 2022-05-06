@@ -3,17 +3,18 @@ import random
 import optima
 
 # Testing parameters
-nTests = 1
+nTests = 100
 nVal = 100
 nTotalParams = 2
 xrange = 1
+nRanges = 10
 
 # Optima parameters
 tol = 1e-4
-maxIts = 100
-maxAttempts = 1
+maxIts = 1000
+maxAttempts = 500
 method = optima.LevenbergMarquardtBroyden
-# method = optima.Bayesian
+method = optima.Bayesian
 
 # Create a mysterious "black-box" function
 def blackBox(testValues, parameters):
@@ -32,14 +33,17 @@ def testEvaluator(validation, tags, beta):
 
 # Loop over range of inputs
 suc = []
-for j in range(0,1):
-    paramRange = [j+i for i in [0,1]]
+grandTotalIts = []
+for j in range(1,nRanges):
+    paramRange = [0,1+j]
 
     nSuccess = 0
+    grandTotalIts.append(0)
     # Loop over tests per input range
     for ti in range(nTests):
         # Generate validation data using "true" parameter values
         trueParams = [paramRange[0] + (paramRange[1]-paramRange[0])*(random.random()) for i in range(nTotalParams)]
+        # trueParams = [5.22851767329473, 4.010085210407342]
         print(trueParams)
         values = []
         for n in range(nVal):
@@ -64,13 +68,17 @@ for j in range(0,1):
                     nSuccess += 1
                     break
             except ValueError:
-                if method == optima.LevenbergMarquardtBroyden:
-                    for p in range(nTotalParams):
-                        tags[str(trueParams[p])] = [paramRange[0] + (paramRange[1]-paramRange[0])*(random.random()),paramRange[0] + (paramRange[1]-paramRange[0])*(random.random())]
-            totalIts += maxIts
+                pass
+            if method == optima.LevenbergMarquardtBroyden:
+                for p in range(nTotalParams):
+                    tags[str(trueParams[p])] = [paramRange[0] + (paramRange[1]-paramRange[0])*(random.random()),paramRange[0] + (paramRange[1]-paramRange[0])*(random.random())]
+            totalIts += iterations
         print(trueParams)
         print(totalIts)
-        print(f' ---- {j} DONE {ti+1}, PASSED {nSuccess} ----')
+        print(f' ---- 0-{j+1} DONE {ti+1}, PASSED {nSuccess} ----')
+        grandTotalIts[-1] += totalIts
+        print(f'Grand Total iterations: {grandTotalIts}')
     print(f'{nSuccess} successes out of {nTests}')
     suc.append(nSuccess)
     print(suc)
+print(f'Average iterations: {[grandTotalIts[i]/suc[i] for i in range(nRanges)]}')
