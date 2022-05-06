@@ -30,11 +30,13 @@ def testEvaluator(validation, tags, beta):
     f = np.array(f)
     return f
 
+# Loop over range of inputs
 suc = []
 for j in range(0,1):
     paramRange = [j+i for i in [0,1]]
 
     nSuccess = 0
+    # Loop over tests per input range
     for ti in range(nTests):
         # Generate validation data using "true" parameter values
         trueParams = [paramRange[0] + (paramRange[1]-paramRange[0])*(random.random()) for i in range(nTotalParams)]
