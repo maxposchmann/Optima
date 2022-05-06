@@ -3,10 +3,10 @@ import random
 import optima
 
 # Testing parameters
-nTests = 100
+nTests = 1
 nVal = 100
 nTotalParams = 2
-xrange = 100
+xrange = 1
 
 # Optima parameters
 tol = 1e-4
@@ -15,19 +15,23 @@ maxAttempts = 1
 method = optima.LevenbergMarquardtBroyden
 # method = optima.Bayesian
 
-# Create a "black-box" function that meets Optima's requirements
-def nonlinearFunction(validation, tags, beta):
+# Create a mysterious "black-box" function
+def blackBox(testValues, parameters):
+    output = 0
+    for j in range(len(parameters)):
+        output += testValues[j]**parameters[j]
+    return output
+
+# A test evaluator that meets Optima's requirements
+def testEvaluator(validation, tags, beta):
     f = []
     for i in range(len(validation)):
-        calcValues = 0
-        for j in range(len(beta)):
-            calcValues += validation[i][j]**beta[j]
-        f.append(calcValues)
+        f.append(blackBox(validation[i],beta))
     f = np.array(f)
     return f
 
 suc = []
-for j in range(0,10):
+for j in range(0,1):
     paramRange = [j+i for i in [0,1]]
 
     nSuccess = 0
@@ -41,7 +45,7 @@ for j in range(0,10):
 
         # Combine validation data with function
         def getValues(tags, beta):
-            return nonlinearFunction(values, tags, beta)
+            return testEvaluator(values, tags, beta)
 
         y = getValues([], trueParams)
 
