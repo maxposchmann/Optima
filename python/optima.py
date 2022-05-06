@@ -34,6 +34,9 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
     betaInit0 = np.array([float(tags[tag][0]) for tag in tags]) / scale
     betaInit1 = np.array([float(tags[tag][1]) for tag in tags]) / scale
 
+    bestNorm = np.Inf
+    bestBeta = np.zeros(n)
+
     for iteration in range(maxIts):
         # Get beta
         if iteration == 0:
@@ -61,7 +64,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
             try:
                 beta = directionVector(r, broydenMatrix, beta, l, steplength, weight)
             except OptimaException:
-                return
+                return bestNorm, iteration + 1, bestBeta * scale
 
         # Calculate the functional values
         # Leave this call straightforward: want to be able to swap this function for any other black box
@@ -87,13 +90,17 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
         print(f'Current coefficients: {beta * scale}')
         print(f'Norm: {norm}')
         print()
+        # Keep track of best norm/beta found
+        if norm < bestNorm:
+            bestBeta = beta
+            bestNorm = norm
         # Check if converged
         if norm < tol:
             # Converged, print and return
             print()
             print('Converged')
             print(f'{beta * scale} after {iteration + 1}')
-            return norm, iteration + 1, beta * scale
+            return bestNorm, iteration + 1, bestBeta * scale
 
         # Update the Broyden matrix:
         if iteration > 0:
@@ -107,7 +114,7 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
         rOld = copy.deepcopy(r)
 
     print('Reached maximum iterations without converging')
-    return norm, iteration + 1, beta * scale
+    return bestNorm, iteration + 1, bestBeta * scale
 
 # Functional norm calculation
 def functionalNorm(residual):
