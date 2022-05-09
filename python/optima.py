@@ -311,5 +311,175 @@ def Bayesian(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
 
     return 1/optimizer.max["target"], optimizer.iteration + init_points, beta
 
+# Combined Bayesian+Broyden optimization
+def Combined(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams):
+    from sklearn.metrics import r2_score
+    import sys
+    sys.path.append('.')
+    from BayesianOptimization.bayes_opt import BayesianOptimization, SequentialDomainReductionTransformer
+
+    # Save original tags to pass to Broyden
+    broydenTags = copy.deepcopy(tags)
+
+    # Set default values for optional parameters
+    acq = 'ucb'
+    init_points = 10
+    eta = 1
+    kappa = 2.576
+    kappa_decay = 1
+    kappa_decay_delay = 0
+    for param, value in extraParams.items():
+        if param == 'acq':
+            acq = value
+        elif param == 'init_points':
+            init_points = value
+        elif param == 'eta':
+            eta = value
+        elif param == 'kappa':
+            kappa = value
+        elif param == 'kappa_decay':
+            kappa_decay = value
+        elif param == 'kappa_decay_delay':
+            kappa_decay_delay = value
+
+    # Get problem dimensions
+    m = len(y)
+    n = len(tags)
+
+    if not len(weight) == m:
+        weight = np.ones(m)
+
+    if not len(scale) == n:
+        scale = np.ones(n)
+
+    # check that we have enough data to go ahead
+    if n == 0:
+        print('No tags with unknown values')
+        return
+    if m == 0:
+        print('No validation points')
+        return
+    for tag in tags:
+        # Check and adjust tags to be legal
+        if tags[tag][0] > tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 > bound 2')
+            print(f'Check tag {tag}')
+            print('Bounds will be swapped automatically')
+            tempbound = tags[tag][0]
+            tags[tag][0] = tags[tag][1]
+            tags[tag][1] = tempbound
+        elif tags[tag][0] == tags[tag][1]:
+            print('Cannot run Bayesian solver with bound 1 == bound 2')
+            print(f'Check tag {tag}')
+            print('Upper bound will be increased automatically')
+            if tags[tag][1] == 0:
+                tags[tag][1] = 7
+            else:
+                tags[tag][1] += abs(tags[tag][1])
+
+    # Use provided functional to get trial values, then calculate R2 score
+    # Need to take an unknown number of tag+value pairs as arguments.
+    def functionalR2(**pairs):
+        beta = list(pairs.values())
+        f = functional(tags, beta)
+        score = r2_score(y, f, sample_weight = weight)
+        return score
+
+    def functionalNormNegative(**pairs):
+        beta = list(pairs.values())
+        f = functional(tags, beta)
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return -norm
+
+    def functionalInverseNorm(**pairs):
+        beta = list(pairs.values())
+        f = functional(tags, beta)
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return 1/norm
+
+    def functionalLogNorm(**pairs):
+        beta = list(pairs.values())
+        f = functional(tags, beta)
+        rscale = 1e6
+        r = rscale * (f - y) / abs(y)
+        norm = functionalNorm(r / rscale)
+        return -np.log(norm)
+
+    totalIts = init_points
+    # First run with Bayesian:
+    # try:
+    bounds_transformer = SequentialDomainReductionTransformer(eta = eta)
+    optimizer = BayesianOptimization(f = functionalInverseNorm, pbounds = tags, bounds_transformer = bounds_transformer)
+    optimizer.maximize(init_points = init_points,
+                       n_iter = maxIts,
+                       acq = acq,
+                       kappa = kappa,
+                       kappa_decay = kappa_decay,
+                       kappa_decay_delay = kappa_decay_delay,
+                       y_limit = 0,
+                       tol = 1/tol,
+                       stagnationIterations = 51,
+                       stagnationThreshold = 0)
+
+    totalIts += optimizer.iteration
+
+    nIterMethods = 10
+    for n in range(nIterMethods):
+        print(f'Bayesian {n+1}: {optimizer.iteration}, {optimizer.max["target"]}')
+        results = list(optimizer.max['params'].items())
+        # Check if converged during Bayesian
+        if 1/optimizer.max["target"] < tol:
+            beta = []
+            print('Best result:')
+            for i in range(n):
+                print(f'{results[i][0]} = {results[i][1]}')
+                beta.append(results[i][1])
+            print(f'f(x) = {optimizer.max["target"]}')
+
+            return 1/optimizer.max["target"], totalIts, beta
+
+        # Get best guess at tags for Broyden
+        i = 0
+        for tag in broydenTags:
+            broydenTags[tag][0] = results[i][1]
+            broydenTags[tag][1] = results[i][1]
+            i += 1
+
+        broydenNorm, broydenIterations, broydenBeta = LevenbergMarquardtBroyden(y,broydenTags,functional,maxIts,tol)
+
+        totalIts += broydenIterations
+
+        print(f'Broyden: {broydenIterations}, {broydenNorm}')
+
+        # Check if converged during Broyden
+        if broydenNorm < tol:
+            return broydenNorm, totalIts, broydenBeta
+
+        # Otherwise iteration with Bayesian
+        optimizer.maximize(init_points = 0,
+                           n_iter = maxIts,
+                           acq = acq,
+                           kappa = kappa,
+                           kappa_decay = kappa_decay,
+                           kappa_decay_delay = kappa_decay_delay,
+                           y_limit = 0,
+                           tol = 1/tol,
+                           stagnationIterations = 51,
+                           stagnationThreshold = 0,
+                           bestValue = optimizer.max["target"])
+        totalIts += optimizer.iteration
+        # except OptimaException:
+        #     return
+        # except ValueError:
+        #     print('Internal bayes_opt error, run cancelled (retry may yield different results)')
+        # Format for output
+
+    return 1/optimizer.max["target"], totalIts, broydenBeta
+
+
 class OptimaException(Exception):
     pass
