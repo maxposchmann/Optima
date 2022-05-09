@@ -427,7 +427,7 @@ def Combined(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
 
     totalIts += optimizer.iteration
 
-    nIterMethods = 10
+    nIterMethods = 4
     for n in range(nIterMethods):
         print(f'Bayesian {n+1}: {optimizer.iteration}, {optimizer.max["target"]}')
         results = list(optimizer.max['params'].items())
