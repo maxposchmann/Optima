@@ -2,10 +2,10 @@ import matplotlib.pyplot as plt
 import json
 import numpy as np
 
-broyden = [ 8.99, 16.50, 63.98, 117.68, 292.35, 237.29, 276.51, 543.88, 678.14, 1038.67]
-bayes   = [43.37, 54.92, 70.60,  95.09, 139.22, 146.31, 189.23, 210.46]
+broyden = [ 8.99, 16.50, 63.98, 117.68, 292.35, 237.29, 276.51, 543.88, 678.14]#, 1038.67]
+bayes   = [43.37, 54.92, 70.60,  95.09, 139.22, 146.31, 189.23, 210.46, 446.84]
 
-x = [i+1 for i in range(10)]
+x = [i+1 for i in range(9)]
 fig = plt.figure()
 ax = fig.add_axes([0.125, 0.1, 0.85, 0.85])
 lns  = ax.plot(x, broyden, 'k.-', label = 'Broyden # iterations')
