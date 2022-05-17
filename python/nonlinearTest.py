@@ -11,10 +11,11 @@ nRanges = 10
 
 # Optima parameters
 tol = 1e-4
-maxIts = 1000
+maxIts = 10
 maxAttempts = 500
 method = optima.LevenbergMarquardtBroyden
 method = optima.Bayesian
+method = optima.Combined
 
 # Create a mysterious "black-box" function
 def blackBox(testValues, parameters):
@@ -34,7 +35,7 @@ def testEvaluator(validation, tags, beta):
 # Loop over range of inputs
 suc = []
 grandTotalIts = []
-for j in range(1,nRanges):
+for j in range(0,nRanges):
     paramRange = [0,1+j]
 
     nSuccess = 0
@@ -81,4 +82,4 @@ for j in range(1,nRanges):
     print(f'{nSuccess} successes out of {nTests}')
     suc.append(nSuccess)
     print(suc)
-print(f'Average iterations: {[grandTotalIts[i]/suc[i] for i in range(nRanges)]}')
+print(f'Average iterations: {[grandTotalIts[i]/suc[i] for i in range(0,nRanges)]}')
