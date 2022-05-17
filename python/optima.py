@@ -410,25 +410,29 @@ def Combined(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
         return -np.log(norm)
 
     totalIts = init_points
+    init     = init_points
+
     # First run with Bayesian:
-    # try:
     bounds_transformer = SequentialDomainReductionTransformer(eta = eta)
     optimizer = BayesianOptimization(f = functionalInverseNorm, pbounds = tags, bounds_transformer = bounds_transformer)
-    optimizer.maximize(init_points = init_points,
-                       n_iter = maxIts,
-                       acq = acq,
-                       kappa = kappa,
-                       kappa_decay = kappa_decay,
-                       kappa_decay_delay = kappa_decay_delay,
-                       y_limit = 0,
-                       tol = 1/tol,
-                       stagnationIterations = 51,
-                       stagnationThreshold = 0)
-
-    totalIts += optimizer.iteration
 
     nIterMethods = 4
     for n in range(nIterMethods):
+        optimizer.maximize(init_points = init,
+                           n_iter = maxIts,
+                           acq = acq,
+                           kappa = kappa,
+                           kappa_decay = kappa_decay,
+                           kappa_decay_delay = kappa_decay_delay,
+                           y_limit = 0,
+                           tol = 1/tol,
+                           stagnationIterations = 51,
+                           stagnationThreshold = 0)
+
+        totalIts += optimizer.iteration
+        # Set init points to 0 for future iterations
+        init = 0
+
         print(f'Bayesian {n+1}: {optimizer.iteration}, {optimizer.max["target"]}')
         results = list(optimizer.max['params'].items())
         # Check if converged during Bayesian
@@ -458,25 +462,6 @@ def Combined(y,tags,functional,maxIts,tol,weight = [], scale = [], **extraParams
         # Check if converged during Broyden
         if broydenNorm < tol:
             return broydenNorm, totalIts, broydenBeta
-
-        # Otherwise iteration with Bayesian
-        optimizer.maximize(init_points = 0,
-                           n_iter = maxIts,
-                           acq = acq,
-                           kappa = kappa,
-                           kappa_decay = kappa_decay,
-                           kappa_decay_delay = kappa_decay_delay,
-                           y_limit = 0,
-                           tol = 1/tol,
-                           stagnationIterations = 51,
-                           stagnationThreshold = 0,
-                           bestValue = optimizer.max["target"])
-        totalIts += optimizer.iteration
-        # except OptimaException:
-        #     return
-        # except ValueError:
-        #     print('Internal bayes_opt error, run cancelled (retry may yield different results)')
-        # Format for output
 
     return 1/optimizer.max["target"], totalIts, broydenBeta
 
