@@ -83,7 +83,10 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
         beta = beta / scale
         # Compute the functional norm:
         rscale = 1e6
-        r = rscale * (f - y) / abs(y)
+        r = rscale * (f - y)
+        for i in range(m):
+            if (y[i] != 0):
+                r[i] = r[i] / abs(y[i])
         norm = functionalNorm(r / rscale)
         # Print current status
         print(f'Iteration: {iteration + 1}')
