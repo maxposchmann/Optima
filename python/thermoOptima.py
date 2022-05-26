@@ -359,12 +359,12 @@ class ThermochimicaOptima:
         with open('validationPoints.ti', 'w') as inputFile:
             inputFile.write('! Optima-generated input file for validation points\n')
             inputFile.write(f'data file         = {self.datfile}\n')
-            inputFile.write(f'temperature unit         = {self.tunit}\n')
-            inputFile.write(f'pressure unit          = {self.punit}\n')
-            inputFile.write(f'mass unit          = {self.munit}\n')
-            inputFile.write(f'nEl         = {len(self.elements)} \n')
-            inputFile.write(f'iEl         = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
-            inputFile.write(f'nCalc       = {len(self.validationPoints)}\n')
+            inputFile.write(f'temperature unit  = {self.tunit}\n')
+            inputFile.write(f'pressure unit     = {self.punit}\n')
+            inputFile.write(f'mass unit         = {self.munit}\n')
+            inputFile.write(f'nEl               = {len(self.elements)} \n')
+            inputFile.write(f'iEl               = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
+            inputFile.write(f'nCalc             = {len(self.validationPoints)}\n')
             for point in self.validationPoints.keys():
                 inputFile.write(f'{" ".join([str(self.validationPoints[point]["state"][i]) for i in range(len(self.elements)+2)])}\n')
     def parseDatabase(self):
