@@ -10,7 +10,7 @@ class transitionFinder:
 
         # Default Optima parameters
         self.tol = 1e-10
-        self.maxIts = 30
+        self.maxIts = 300
 
         # Default Thermochimica settings
         self.tunit = 'K'
@@ -18,7 +18,7 @@ class transitionFinder:
         self.munit = 'moles'
 
         # Check targetTemperature +/- tempRange (in tunit)
-        self.tempRange = 50
+        self.tempRange = 30
 
         # Minimum allowed concentration of included component
         # Should be > 0 to avoid deleting relevant phases
@@ -86,8 +86,8 @@ class transitionFinder:
         self.tagNames = ['temperature']
         self.tagNames.extend(self.targetComposition.keys())
         self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
-        self.tags['temperature'][0] = self.targetTemperature
-        self.tags['temperature'][1] = self.targetTemperature
+        self.tags['temperature'][0] = self.targetTemperature * 0.999
+        self.tags['temperature'][1] = self.targetTemperature * 1.001
 
         # Normalize compositions
         totalMass = 0
@@ -95,8 +95,8 @@ class transitionFinder:
             totalMass += self.targetComposition[element]
         for element in self.targetComposition.keys():
             self.targetComposition[element] = self.targetComposition[element] / totalMass
-            self.tags[element][0] = self.targetComposition[element]
-            self.tags[element][1] = self.targetComposition[element]
+            self.tags[element][0] = self.targetComposition[element] * 0.999
+            self.tags[element][1] = self.targetComposition[element] * 1.001
 
         # Set bounds for values
         self.extraParams = {}
