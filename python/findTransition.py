@@ -26,34 +26,9 @@ class transitionFinder:
         for phase in self.transitionStoichiometricPhases:
             self.validationPoints['0']['values']['pure condensed phases'][phase] = dict([('driving force', 0)])
 
-        tags = ['temperature']
+        self.tagNames = ['temperature']
         self.targetTemperature = 1600
         self.targetComposition = dict([('Pd',0.3),('Mo',0.7)])
-
-        self.tags = dict([(tags[i], [0,0]) for i in range(len(tags))])
-        self.tags['temperature'][0] = self.targetTemperature
-        self.tags['temperature'][1] = self.targetTemperature
-
-        # Use currying to package validationPoints with getPointValidationValues
-        def getValues(tags, beta):
-            return thermoOptima.getPointValidationValues(self.updateInputFile, self.validationPoints, tags, beta)
-
-        # Get validation value/weight pairs
-        validationPairs = []
-        for key in self.validationPoints.keys():
-            calcValues = []
-            dictTools.getParallelDictValues(self.validationPoints[key]['values'],
-                                            self.validationPoints[key]['values'],
-                                            calcValues)
-            validationPairs.extend(calcValues)
-
-        # Call Optima
-        optima.LevenbergMarquardtBroyden(validationPairs,
-                                         self.tags,
-                                         getValues,
-                                         self.maxIts,
-                                         self.tol
-                                        )
 
     def parseDatabase(self):
         self.elements = []
@@ -102,5 +77,31 @@ class transitionFinder:
                     compositions.append('0')
             for point in self.validationPoints.keys():
                 inputFile.write(f'{beta[0]} 1 {" ".join(compositions)}\n')
+    def findTransition(self):
+        self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
+        self.tags['temperature'][0] = self.targetTemperature
+        self.tags['temperature'][1] = self.targetTemperature
 
-transitionFinder('Kaye_NobleMetals.dat')
+        # Use currying to package validationPoints with getPointValidationValues
+        def getValues(tags, beta):
+            return thermoOptima.getPointValidationValues(self.updateInputFile, self.validationPoints, tags, beta)
+
+        # Get validation value/weight pairs
+        validationPairs = []
+        for key in self.validationPoints.keys():
+            calcValues = []
+            dictTools.getParallelDictValues(self.validationPoints[key]['values'],
+                                            self.validationPoints[key]['values'],
+                                            calcValues)
+            validationPairs.extend(calcValues)
+
+        # Call Optima
+        optima.LevenbergMarquardtBroyden(validationPairs,
+                                         self.tags,
+                                         getValues,
+                                         self.maxIts,
+                                         self.tol
+                                        )
+
+kaye = transitionFinder('Kaye_NobleMetals.dat')
+kaye.findTransition()
