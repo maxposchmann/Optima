@@ -20,9 +20,11 @@ class transitionFinder:
         # Phases involved in transition
         self.transitionSolutionPhases = ['FCCN','BCCN','HCPN']
 
-        self.tagNames = ['temperature']
         self.targetTemperature = 1600
         self.targetComposition = dict([('Pd',0.3),('Mo',0.7)])
+
+        self.tagNames = ['temperature']
+        self.tagNames.extend(self.targetComposition.keys())
 
     def parseDatabase(self):
         self.elements = []
@@ -66,7 +68,7 @@ class transitionFinder:
             compositions = []
             for element in self.elements:
                 if element in self.targetComposition.keys():
-                    compositions.append(str(self.targetComposition[element]))
+                    compositions.append(str(beta[1 + list(self.targetComposition.keys()).index(element)]))
                 else:
                     compositions.append('0')
             for point in self.validationPoints.keys():
@@ -76,6 +78,9 @@ class transitionFinder:
         self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
         self.tags['temperature'][0] = self.targetTemperature
         self.tags['temperature'][1] = self.targetTemperature
+        for element in self.targetComposition.keys():
+            self.tags[element][0] = self.targetComposition[element]
+            self.tags[element][1] = self.targetComposition[element]
 
         # Setup validation
         for phase in self.transitionSolutionPhases:
