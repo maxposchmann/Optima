@@ -8,12 +8,22 @@ class transitionFinder:
         self.datafile = datafile
         self.parseDatabase()
 
-        # Default parameters
+        # Default Optima parameters
         self.tol = 1e-10
         self.maxIts = 30
+
+        # Default Thermochimica settings
         self.tunit = 'K'
         self.punit = 'atm'
         self.munit = 'moles'
+
+        # Check targetTemperature +/- tempRange (in tunit)
+        self.tempRange = 50
+
+        # Minimum allowed concentration of included component
+        # Should be > 0 to avoid deleting relevant phases
+        self.minConcentration = 1e-6
+        self.concRange = 0.1
 
         self.validationPoints = dict([('0', dict([('values', dict([('solution phases',dict([])),('pure condensed phases',dict([]))]))]))])
 
@@ -78,9 +88,23 @@ class transitionFinder:
         self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
         self.tags['temperature'][0] = self.targetTemperature
         self.tags['temperature'][1] = self.targetTemperature
+
+        # Normalize compositions
+        totalMass = 0
         for element in self.targetComposition.keys():
+            totalMass += self.targetComposition[element]
+        for element in self.targetComposition.keys():
+            self.targetComposition[element] = self.targetComposition[element] / totalMass
             self.tags[element][0] = self.targetComposition[element]
             self.tags[element][1] = self.targetComposition[element]
+
+        # Set bounds for values
+        self.extraParams = {}
+        self.extraParams['bounds'] = [[self.targetTemperature - self.tempRange,self.targetTemperature + self.tempRange]]
+        for element in self.targetComposition.keys():
+            minCon = max(self.targetComposition[element] - self.concRange,self.minConcentration)
+            maxCon = min(self.targetComposition[element] + self.concRange,1)
+            self.extraParams['bounds'].append([minCon,maxCon])
 
         # Setup validation
         for phase in self.transitionSolutionPhases:
@@ -103,11 +127,12 @@ class transitionFinder:
             validationPairs.extend(calcValues)
 
         # Call Optima
-        optima.LevenbergMarquardtBroyden(validationPairs,
+        bestNorm, iteration, bestBeta = optima.LevenbergMarquardtBroyden(validationPairs,
                                          self.tags,
                                          getValues,
                                          self.maxIts,
-                                         self.tol
+                                         self.tol,
+                                         **self.extraParams
                                         )
 
 kaye = transitionFinder('Kaye_NobleMetals.dat')
@@ -115,3 +140,9 @@ kaye.transitionSolutionPhases = ['FCCN','BCCN','HCPN']
 kaye.targetTemperature = 1600
 kaye.targetComposition = dict([('Pd',0.3),('Mo',0.7)])
 kaye.findTransition()
+        print(f'Temperature: {bestBeta[0]}')
+        i = 0
+        for element in self.targetComposition.keys():
+            i += 1
+            print(f'{element}: {bestBeta[i]*totalMass}')
+
