@@ -27,6 +27,13 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
         print('No validation points')
         return
 
+    # Get bounds if provided
+    bounds = [[-np.Inf,np.Inf] for _ in range(n)]
+    for param, value in extraParams.items():
+        if param == 'bounds':
+            if len(value) == n:
+                bounds = value
+
     # initialize Broyden matrix as 1s
     broydenMatrix = np.ones([m,n])
 
@@ -68,6 +75,11 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
 
         # Calculate the functional values
         # Leave this call straightforward: want to be able to swap this function for any other black box
+        for i in range(n):
+            if beta[i] < bounds[i][0]:
+                beta[i] = bounds[i][0]
+            elif beta[i] > bounds[i][1]:
+                beta[i] = bounds[i][1]
         beta = beta * scale
         try:
             f = functional(tags,beta)
