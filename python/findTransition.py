@@ -18,13 +18,11 @@ class transitionFinder:
         self.validationPoints = dict([('0', dict([('values', dict([('solution phases',dict([])),('pure condensed phases',dict([]))]))]))])
 
         # Phases involved in transition
-        self.transitionSolutionPhases = ['FCCN','BCCN','HCPN']
+        self.transitionSolutionPhases = []
+        self.transitionStoichiometricPhases = []
 
-        self.targetTemperature = 1600
-        self.targetComposition = dict([('Pd',0.3),('Mo',0.7)])
-
-        self.tagNames = ['temperature']
-        self.tagNames.extend(self.targetComposition.keys())
+        self.targetTemperature = []
+        self.targetComposition = []
 
     def parseDatabase(self):
         self.elements = []
@@ -75,6 +73,8 @@ class transitionFinder:
                 inputFile.write(f'{beta[0]} 1 {" ".join(compositions)}\n')
     def findTransition(self):
         # Setup tags
+        self.tagNames = ['temperature']
+        self.tagNames.extend(self.targetComposition.keys())
         self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
         self.tags['temperature'][0] = self.targetTemperature
         self.tags['temperature'][1] = self.targetTemperature
@@ -86,7 +86,6 @@ class transitionFinder:
         for phase in self.transitionSolutionPhases:
             self.validationPoints['0']['values']['solution phases'][phase] = dict([('driving force', 0)])
 
-        self.transitionStoichiometricPhases = []
         for phase in self.transitionStoichiometricPhases:
             self.validationPoints['0']['values']['pure condensed phases'][phase] = dict([('driving force', 0)])
 
@@ -112,4 +111,7 @@ class transitionFinder:
                                         )
 
 kaye = transitionFinder('Kaye_NobleMetals.dat')
+kaye.transitionSolutionPhases = ['FCCN','BCCN','HCPN']
+kaye.targetTemperature = 1600
+kaye.targetComposition = dict([('Pd',0.3),('Mo',0.7)])
 kaye.findTransition()
