@@ -88,43 +88,26 @@ def createIntermediateDat(tags,filename):
 
 class ThermochimicaOptima:
     def __init__(self):
+        self.children = []
+        # Default parameters
         self.tol = 1e-4
         self.maxIts = 30
-        self.datafile = 'fcctest.dat'
-        self.elements = []
-        # Get element names so that we can set up the calculation and windows
-        with open(self.datafile) as f:
-            f.readline() # read comment line
-            line = f.readline() # read first data line (# elements, # phases, n*# species)
-            nElements = int(line[1:5])
-            nSoln = int(line[6:10])
-            while True:
-                line = f.readline() # read the rest of the # species but don't need them)
-                if any(c.isalpha() for c in line):
-                    break
-            elLen = 25 # element names are formatted 25 wide
-            els = line # get the first line with letters in it
-            for i in range(math.ceil(nElements/3)):
-                for j in range(3):
-                    self.elements.append(els[1+j*elLen:(1+j)*elLen].strip())
-                els = f.readline() # read a line of elements (3 per line)
-                # It doesn't matter now, but this reads one more line than required
-        for el in self.elements:
-            try:
-                index = atomic_number_map.index(el)+1 # get element indices in PT (i.e. # of protons)
-            except ValueError:
-                if len(el) > 0:
-                    if el[0] != 'e':
-                        print(el+' not in list') # if the name is bogus (or e(phase)), discard
-                self.elements = list(filter(lambda a: a != el, self.elements))
+        # self.datafile = 'fcctest.dat'
+        self.datafile = 'kaye-drivingForce.dat'
+        # Parse datafile
+        self.parseDatabase()
+        # Set up window
         windowList.append(self)
-        buttonLayout   = [[sg.Button('Edit Coefficients', size = buttonSize)],
-                        [sg.Button('Add Validation Data', size = buttonSize)],
-                        [sg.Button('Clear Validation Data', size = buttonSize)],
-                        [sg.Button('Edit Validation Data', size = buttonSize)],
-                        [sg.Button('Save Validation Data', size = buttonSize), sg.Input(key='-saveValidationName-',size=16), sg.Text('.json')],
-                        [sg.Button('Load Validation Data', size = buttonSize), sg.Input(key='-loadValidationName-',size=16), sg.Text('.json')],
-                        [sg.Button('Run', size = buttonSize)]]
+        buttonLayout   = [
+                         [sg.Button('Choose Database', size = buttonSize)],
+                         [sg.Button('Edit Coefficients', size = buttonSize)],
+                         [sg.Button('Add Validation Data', size = buttonSize)],
+                         [sg.Button('Clear Validation Data', size = buttonSize)],
+                         [sg.Button('Edit Validation Data', size = buttonSize)],
+                         [sg.Button('Save Validation Data', size = buttonSize), sg.Input(key='-saveValidationName-',size=16), sg.Text('.json')],
+                         [sg.Button('Load Validation Data', size = buttonSize), sg.Input(key='-loadValidationName-',size=16), sg.Text('.json')],
+                         [sg.Button('Run', size = buttonSize)]
+                         ]
         broydenLayout  = sg.Column([
                                    [sg.Radio('Levenberg-Marquardt + Broyden', 'methods', default=True, enable_events=True, key='LMB')],
                                    [sg.Text('Tolerance:', size = keyNameWidth),sg.Input(key = '-tol-', size = inputSize)],
@@ -142,14 +125,10 @@ class ThermochimicaOptima:
                                    ], expand_x=True, expand_y=True)
         methodLayout   = [[sg.Text('Select Optimization Method:')],[broydenLayout,bayesianLayout]]
         self.sgw = sg.Window('Optima', [buttonLayout,methodLayout], location = [0,0], finalize=True)
-        self.children = []
-        # Automatically open a window for initial conditions
-        self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
-        self.children.append(self.tagWindow)
+
         self.validationPoints = dict([])
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
-
         # stuff for writing input file (hardcode values for now)
         self.datfile = f'{os.getcwd()}/optima.dat'
         self.tunit = 'K'
@@ -166,10 +145,13 @@ class ThermochimicaOptima:
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
-        if event == 'Edit Coefficients':
+        elif event == 'Choose Database':
+            databaseWindow = DatabaseWindow(self)
+            self.children.append(databaseWindow)
+        elif event == 'Edit Coefficients':
             self.tagWindow.close()
             self.tagWindow.open()
-        if event == 'Add Validation Data':
+        elif event == 'Add Validation Data':
             # Get the number of points to be added. This window will (should) be blocking.
             npoints = 0
             npointsLayout = [[sg.Text('Number of validation calculations:'),sg.Input(key = '-npoints-',size = [inputSize,1])],
@@ -193,25 +175,25 @@ class ThermochimicaOptima:
             if npoints > 0:
                 self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
-        if event == 'Clear Validation Data':
+        elif event == 'Clear Validation Data':
             self.validationPoints = dict([])
             print('Validation data cleared')
-        if event == 'Edit Validation Data':
+        elif event == 'Edit Validation Data':
             editDataWindow = EditDataWindow(self.validationPoints,self.elements)
             self.children.append(editDataWindow)
-        if event == 'Save Validation Data':
+        elif event == 'Save Validation Data':
             if values['-saveValidationName-'] == '':
                 filename = 'validationData.json'
             else:
                 filename = f'{values["-saveValidationName-"]}.json'
             self.saveValidation(filename)
-        if event == 'Load Validation Data':
+        elif event == 'Load Validation Data':
             if values['-loadValidationName-'] == '':
                 filename = 'validationData.json'
             else:
                 filename = f'{values["-loadValidationName-"]}.json'
             self.loadValidation(filename)
-        if event == 'Run':
+        elif event == 'Run':
             try:
                 if values['-tol-'] == '':
                     # let blank reset to default
@@ -282,10 +264,10 @@ class ThermochimicaOptima:
             elif values['-acq-'] == 'Probability of Improvement':
                 self.extraParams['acq'] = 'poi'
             self.run()
-        if event == 'LMB':
+        elif event == 'LMB':
             # Set method to Levenberg-Marquardt + Broyden
             self.method = optima.LevenbergMarquardtBroyden
-        if event == 'Bayes':
+        elif event == 'Bayes':
             # Set method to Bayesian optimization
             self.method = optima.Bayesian
     def run(self):
@@ -385,6 +367,44 @@ class ThermochimicaOptima:
             inputFile.write(f'nCalc       = {len(self.validationPoints)}\n')
             for point in self.validationPoints.keys():
                 inputFile.write(f'{" ".join([str(self.validationPoints[point]["state"][i]) for i in range(len(self.elements)+2)])}\n')
+    def parseDatabase(self):
+        self.elements = []
+        if self.datafile == '':
+            return
+        # Get element names so that we can set up the calculation and windows
+        with open(self.datafile) as f:
+            f.readline() # read comment line
+            line = f.readline() # read first data line (# elements, # phases, n*# species)
+            nElements = int(line[1:5])
+            nSoln = int(line[6:10])
+            while True:
+                line = f.readline() # read the rest of the # species but don't need them)
+                if any(c.isalpha() for c in line):
+                    break
+            elLen = 25 # element names are formatted 25 wide
+            els = line # get the first line with letters in it
+            for i in range(math.ceil(nElements/3)):
+                for j in range(3):
+                    self.elements.append(els[1+j*elLen:(1+j)*elLen].strip())
+                els = f.readline() # read a line of elements (3 per line)
+                # It doesn't matter now, but this reads one more line than required
+        for el in self.elements:
+            try:
+                index = atomic_number_map.index(el)+1 # get element indices in PT (i.e. # of protons)
+            except ValueError:
+                if len(el) > 0:
+                    if el[0] != 'e':
+                        print(el+' not in list') # if the name is bogus (or e(phase)), discard
+                self.elements = list(filter(lambda a: a != el, self.elements))
+
+        # Automatically open a window for initial conditions
+        try:
+            # Close old tagWindow if exists
+            self.tagWindow.close()
+        except AttributeError:
+            pass
+        self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
+        self.children.append(self.tagWindow)
 
 class EditDataWindow:
     def __init__(self,points,elements):
@@ -497,6 +517,74 @@ class EditDataWindow:
                                         +f'{self.points[point]["state"][1]:6.2f} atm'
                                  ])
         self.sgw['-dataList-'].update(self.data)
+
+class DatabaseWindow:
+    def __init__(self,parent):
+        windowList.append(self)
+        self.parent = parent
+        file_list_column = [
+            [
+                sg.Text("Database Folder"),
+                sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
+                sg.FolderBrowse(),
+            ],
+            [
+                sg.Listbox(
+                    values=[], enable_events=True, size=(40, 20), key="-FILE LIST-"
+                )
+            ],
+            [
+                sg.Button('Accept', size = buttonSize)
+            ]
+        ]
+        self.folder = os.getcwd()
+        try:
+            file_list = os.listdir(self.folder)
+        except:
+            file_list = []
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(os.path.join(self.folder, f))
+            and f.lower().endswith((".dat", ".DAT"))
+        ]
+        fnames = sorted(fnames, key=str.lower)
+        self.sgw = sg.Window('Thermochimica database selection', file_list_column, location = [0,0], finalize=True)
+        self.sgw["-FILE LIST-"].update(fnames)
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in windowList:
+            windowList.remove(self)
+    def read(self):
+        event, values = self.sgw.read(timeout=timeout)
+        if event == sg.WIN_CLOSED or event == 'Exit':
+            self.close()
+        elif event == "-FOLDER-":
+            self.folder = values["-FOLDER-"]
+            try:
+                file_list = os.listdir(self.folder)
+            except:
+                file_list = []
+
+            fnames = [
+                f
+                for f in file_list
+                if os.path.isfile(os.path.join(self.folder, f))
+                and f.lower().endswith((".dat", ".DAT"))
+            ]
+            fnames = sorted(fnames, key=str.lower)
+            self.sgw["-FILE LIST-"].update(fnames)
+        elif event == "-FILE LIST-":  # A file was chosen from the listbox
+            try:
+                self.parent.datafile = os.path.join(self.folder, values["-FILE LIST-"][0])
+            except:
+                return
+        elif event == 'Accept':
+            self.parent.parseDatabase()
+            self.close()
 
 windowList = []
 def main():
