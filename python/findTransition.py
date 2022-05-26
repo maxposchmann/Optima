@@ -19,12 +19,6 @@ class transitionFinder:
 
         # Phases involved in transition
         self.transitionSolutionPhases = ['FCCN','BCCN','HCPN']
-        for phase in self.transitionSolutionPhases:
-            self.validationPoints['0']['values']['solution phases'][phase] = dict([('driving force', 0)])
-
-        self.transitionStoichiometricPhases = []
-        for phase in self.transitionStoichiometricPhases:
-            self.validationPoints['0']['values']['pure condensed phases'][phase] = dict([('driving force', 0)])
 
         self.tagNames = ['temperature']
         self.targetTemperature = 1600
@@ -78,9 +72,18 @@ class transitionFinder:
             for point in self.validationPoints.keys():
                 inputFile.write(f'{beta[0]} 1 {" ".join(compositions)}\n')
     def findTransition(self):
+        # Setup tags
         self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
         self.tags['temperature'][0] = self.targetTemperature
         self.tags['temperature'][1] = self.targetTemperature
+
+        # Setup validation
+        for phase in self.transitionSolutionPhases:
+            self.validationPoints['0']['values']['solution phases'][phase] = dict([('driving force', 0)])
+
+        self.transitionStoichiometricPhases = []
+        for phase in self.transitionStoichiometricPhases:
+            self.validationPoints['0']['values']['pure condensed phases'][phase] = dict([('driving force', 0)])
 
         # Use currying to package validationPoints with getPointValidationValues
         def getValues(tags, beta):
