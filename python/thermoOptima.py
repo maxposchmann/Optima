@@ -42,11 +42,10 @@ atomic_number_map = [
     'Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts', 'Og'
 ]
 
-def getPointValidationValues(validation, tags, beta):
-    shutil.copy('optima-inter.dat','optima.dat')
-    keys = list(tags.keys())
-    for i in range(len(tags)):
-        subprocess.call(['sed', '-i', '-e',  f's/<{keys[i]}>/{beta[i]}/g', 'optima.dat'])
+def getPointValidationValues(updateInputFunction, validation, tags, beta):
+    # Call update function
+    updateInputFunction(tags, beta)
+    # Run calculation
     subprocess.run(['thermochimica/bin/RunCalculationList','validationPoints.ti'])
 
     jsonFile = open('thermochimica/thermoout.json',)
@@ -70,6 +69,12 @@ def getPointValidationValues(validation, tags, beta):
         f.extend(calcValues)
     f = np.array(f)
     return f
+
+def updateDat(tags, beta):
+    shutil.copy('optima-inter.dat','optima.dat')
+    keys = list(tags.keys())
+    for i in range(len(tags)):
+        subprocess.call(['sed', '-i', '-e',  f's/<{keys[i]}>/{beta[i]}/g', 'optima.dat'])
 
 def createIntermediateDat(tags,filename):
     shutil.copy(filename,'optima-inter.dat')
@@ -300,7 +305,7 @@ class ThermochimicaOptima:
         intertags = createIntermediateDat(self.tagWindow.tags,self.datafile)
         # Use currying to package validationPoints with getPointValidationValues
         def getValues(tags, beta):
-            return getPointValidationValues(self.validationPoints, tags, beta)
+            return getPointValidationValues(updateDat, self.validationPoints, tags, beta)
         # Get validation value/weight pairs
         validationPairs = []
         validationKeys = list(self.validationPoints.keys())
