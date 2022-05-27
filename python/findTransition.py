@@ -93,11 +93,11 @@ class transitionFinder:
         self.tags['temperature'][1] = self.targetTemperature * 1.001
 
         # Normalize compositions
-        totalMass = 0
+        self.totalMass = 0
         for element in self.targetComposition.keys():
-            totalMass += self.targetComposition[element]
+            self.totalMass += self.targetComposition[element]
         for element in self.targetComposition.keys():
-            self.targetComposition[element] = self.targetComposition[element] / totalMass
+            self.targetComposition[element] = self.targetComposition[element] / self.totalMass
             self.tags[element][0] = self.targetComposition[element] * 0.999
             self.tags[element][1] = self.targetComposition[element] * 1.001
 
@@ -130,10 +130,10 @@ class transitionFinder:
             validationPairs.extend(calcValues)
 
         # Call Optima
-        bestNorm, iteration, bestBeta = optima.LevenbergMarquardtBroyden(validationPairs,
-                                         self.tags,
-                                         getValues,
-                                         self.maxIts,
-                                         self.tol,
-                                         **self.extraParams
-                                        )
+        self.bestNorm, self.iteration, self.bestBeta = optima.LevenbergMarquardtBroyden(validationPairs,
+                                                         self.tags,
+                                                         getValues,
+                                                         self.maxIts,
+                                                         self.tol,
+                                                         **self.extraParams
+                                                        )
