@@ -198,7 +198,7 @@ def directionVector(residual, broydenMatrix, coefficient, l, steplength, weight)
         for j in range(n):
             betaNew[j] = coefficient[j] + steplength * x[j]
         return betaNew
-    except np.linalg.LinAlgError:
+    except (np.linalg.LinAlgError, ValueError) as e:
         print('There was a problem in solving the system of linear equations.')
         raise OptimaException
 
