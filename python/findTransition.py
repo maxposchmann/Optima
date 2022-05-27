@@ -32,7 +32,7 @@ class transitionFinder:
         self.transitionStoichiometricPhases = []
 
         self.targetTemperature = []
-        self.targetComposition = []
+        self.targetComposition = dict([])
 
         # Default path to Thermochimica root assumes submodule installed
         self.thermochimica_path = 'thermochimica'
