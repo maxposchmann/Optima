@@ -34,6 +34,9 @@ class transitionFinder:
         self.targetTemperature = []
         self.targetComposition = []
 
+        # Default path to Thermochimica root assumes submodule installed
+        self.thermochimica_path = 'thermochimica'
+
     def parseDatabase(self):
         self.elements = []
         if self.datafile == '':
@@ -115,7 +118,7 @@ class transitionFinder:
 
         # Use currying to package validationPoints with getPointValidationValues
         def getValues(tags, beta):
-            return thermoOptima.getPointValidationValues(self.updateInputFile, self.validationPoints, tags, beta)
+            return thermoOptima.getPointValidationValues(self.updateInputFile, self.validationPoints, tags, beta, self.thermochimica_path)
 
         # Get validation value/weight pairs
         validationPairs = []

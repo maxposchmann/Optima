@@ -42,13 +42,13 @@ atomic_number_map = [
     'Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts', 'Og'
 ]
 
-def getPointValidationValues(updateInputFunction, validation, tags, beta):
+def getPointValidationValues(updateInputFunction, validation, tags, beta, thermochimica_path):
     # Call update function
     updateInputFunction(tags, beta)
     # Run calculation
-    subprocess.run(['thermochimica/bin/RunCalculationList','validationPoints.ti'])
+    subprocess.run([thermochimica_path + '/bin/RunCalculationList','validationPoints.ti'])
 
-    jsonFile = open('thermochimica/thermoout.json',)
+    jsonFile = open(thermochimica_path + '/thermoout.json',)
     try:
         data = json.load(jsonFile)
         jsonFile.close()
