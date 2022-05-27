@@ -5,9 +5,10 @@ kaye.transitionSolutionPhases = ['FCCN','BCCN','HCPN']
 kaye.targetTemperature = 1600
 kaye.targetComposition = dict([('Pd',0.3),('Mo',0.7)])
 kaye.thermochimica_path = '../thermochimica'
+kaye.tempRange = 50
 kaye.findTransition()
-print(f'Temperature: {bestBeta[0]}')
+print(f'Temperature: {kaye.bestBeta[0]}')
 i = 0
-for element in self.targetComposition.keys():
+for element in kaye.targetComposition.keys():
     i += 1
-    print(f'{element}: {bestBeta[i]*totalMass}')
+    print(f'{element}: {kaye.bestBeta[i]*kaye.totalMass}')
