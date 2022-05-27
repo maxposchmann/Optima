@@ -85,13 +85,13 @@ def LevenbergMarquardtBroyden(y,tags,functional,maxIts,tol,weight = [], scale = 
             f = functional(tags,beta)
         except OptimaException:
             if iteration == 0:
-                return
+                return bestNorm, iteration + 1, bestBeta * scale
             # If a calculation fails, try shrinking step drastically
             beta = 0.999 * betaOld + 0.001 * beta
             try:
                 f = functional(tags,beta)
             except OptimaException:
-                return
+                return bestNorm, iteration + 1, bestBeta * scale
         beta = beta / scale
         # Compute the functional norm:
         rscale = 1e6
