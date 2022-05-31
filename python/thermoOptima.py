@@ -45,28 +45,30 @@ atomic_number_map = [
 def getPointValidationValues(updateInputFunction, validation, tags, beta, thermochimica_path):
     # Call update function
     updateInputFunction(tags, beta)
-    # Run calculation
-    subprocess.run([thermochimica_path + '/bin/RunCalculationList','validationPoints.ti'])
 
-    jsonFile = open(thermochimica_path + '/thermoout.json',)
-    try:
-        data = json.load(jsonFile)
-        jsonFile.close()
-    except:
-        jsonFile.close()
-        print('Data load failed')
-        raise optima.OptimaException
+    # Run input files and store data
+    for n_val in range(len(validationPoints)):
+        subprocess.run([thermochimica_path + '/bin/RunCalculationList',f'validationPoints-{n_val}.ti'])
 
-    validationKeys = list(validation.keys())
-    f = []
-    for i in range(len(validation)):
-        if len(data[str(i+1)].keys()) == 0:
-            print('Thermochimica calculation failed to converge')
+        jsonFile = open(thermochimica_path + '/thermoout.json',)
+        try:
+            data = json.load(jsonFile)
+            jsonFile.close()
+        except:
+            jsonFile.close()
+            print('Data load failed')
             raise optima.OptimaException
-        # Get all comparison values per calculation
-        calcValues = []
-        dictTools.getParallelDictValues(validation[validationKeys[i]]['values'],data[str(i+1)],calcValues)
-        f.extend(calcValues)
+
+        validationKeys = list(validation[n_val].keys())
+        f = []
+        for i in range(len(validationKeys)):
+            if len(data[str(i+1)].keys()) == 0:
+                print('Thermochimica calculation failed to converge')
+                raise optima.OptimaException
+            # Get all comparison values per calculation
+            calcValues = []
+            dictTools.getParallelDictValues(validation[n_val][validationKeys[i]]['values'],data[str(i+1)],calcValues)
+            f.extend(calcValues)
     f = np.array(f)
     return f
 
@@ -126,7 +128,7 @@ class ThermochimicaOptima:
         methodLayout   = [[sg.Text('Select Optimization Method:')],[broydenLayout,bayesianLayout]]
         self.sgw = sg.Window('Optima', [buttonLayout,methodLayout], location = [0,0], finalize=True)
 
-        self.validationPoints = dict([])
+        self.validationPoints = [] #dict([])
         # Set default method to Levenberg-Marquardt + Broyden
         self.method = optima.LevenbergMarquardtBroyden
         # stuff for writing input file (hardcode values for now)
@@ -272,7 +274,7 @@ class ThermochimicaOptima:
             self.method = optima.Bayesian
     def run(self):
         # Get initial problem dimensions
-        m = len(self.validationPoints)
+        m = np.sum([len(points) for points in self.validationPoints])
         n = len(self.tagWindow.tags)
         # Check that we have enough data to go ahead
         if m == 0:
@@ -290,13 +292,14 @@ class ThermochimicaOptima:
             return getPointValidationValues(updateDat, self.validationPoints, tags, beta)
         # Get validation value/weight pairs
         validationPairs = []
-        validationKeys = list(self.validationPoints.keys())
-        for i in range(m):
-            calcValues = []
-            dictTools.getParallelDictValues(self.validationPoints[validationKeys[i]]['values'],
-                                            self.validationPoints[validationKeys[i]]['values'],
-                                            calcValues)
-            validationPairs.extend(calcValues)
+        for points in self.validationPoints:
+            validationKeys = list(points.keys())
+            for i in range(m):
+                calcValues = []
+                dictTools.getParallelDictValues(points[validationKeys[i]]['values'],
+                                                points[validationKeys[i]]['values'],
+                                                calcValues)
+                validationPairs.extend(calcValues)
         # Real problem size is number of value/weight pairs x number of tags to be optimized
         m = len(validationPairs)
         n = len(intertags)
@@ -340,10 +343,7 @@ class ThermochimicaOptima:
             print('Data load failed')
             return
         if len(newPoints) > 0:
-            if len(self.validationPoints) == 0:
-                startIndex = 0
-            else:
-                startIndex = int(list(self.validationPoints.keys())[-1]) + 1
+            startIndex = 0
             i = 0
             oldKeys = list(newPoints.keys())
             # create a new dict to edit the keys to avoid overlapping keys
@@ -351,22 +351,23 @@ class ThermochimicaOptima:
             for point in oldKeys:
                 rekeyedPoints[startIndex + i] = newPoints.pop(point)
                 i += 1
-            self.validationPoints.update(rekeyedPoints)
+            self.validationPoints.append(rekeyedPoints)
             print(f'{len(rekeyedPoints)} validation points loaded')
         else:
             print('No entries in validation JSON')
     def writeFile(self):
-        with open('validationPoints.ti', 'w') as inputFile:
-            inputFile.write('! Optima-generated input file for validation points\n')
-            inputFile.write(f'data file         = {self.datfile}\n')
-            inputFile.write(f'temperature unit  = {self.tunit}\n')
-            inputFile.write(f'pressure unit     = {self.punit}\n')
-            inputFile.write(f'mass unit         = {self.munit}\n')
-            inputFile.write(f'nEl               = {len(self.elements)} \n')
-            inputFile.write(f'iEl               = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
-            inputFile.write(f'nCalc             = {len(self.validationPoints)}\n')
-            for point in self.validationPoints.keys():
-                inputFile.write(f'{" ".join([str(self.validationPoints[point]["state"][i]) for i in range(len(self.elements)+2)])}\n')
+        for n_val in range(len(self.validationPoints)):
+            with open(f'validationPoints-{n_val}.ti', 'w') as inputFile:
+                inputFile.write('! Optima-generated input file for validation points\n')
+                inputFile.write(f'data file         = {self.datfile}\n')
+                inputFile.write(f'temperature unit  = {self.tunit}\n')
+                inputFile.write(f'pressure unit     = {self.punit}\n')
+                inputFile.write(f'mass unit         = {self.munit}\n')
+                inputFile.write(f'nEl               = {len(self.elements)} \n')
+                inputFile.write(f'iEl               = {" ".join([str(atomic_number_map.index(element)+1) for element in self.elements])}\n')
+                inputFile.write(f'nCalc             = {len(self.validationPoints[n_val])}\n')
+                for point in self.validationPoints[n_val].keys():
+                    inputFile.write(f'{" ".join([str(self.validationPoints[n_val][point]["state"][i]) for i in range(len(self.elements)+2)])}\n')
     def parseDatabase(self):
         self.elements = []
         if self.datafile == '':
