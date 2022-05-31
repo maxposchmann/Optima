@@ -47,6 +47,7 @@ def getPointValidationValues(updateInputFunction, validation, tags, beta, thermo
     updateInputFunction(tags, beta)
 
     # Run input files and store data
+    f = []
     for n_val in range(len(validation)):
         subprocess.run([thermochimica_path + '/bin/RunCalculationList',f'validationPoints-{n_val}.ti'])
 
@@ -60,7 +61,6 @@ def getPointValidationValues(updateInputFunction, validation, tags, beta, thermo
             raise optima.OptimaException
 
         validationKeys = list(validation[n_val].keys())
-        f = []
         for i in range(len(validationKeys)):
             if len(data[str(i+1)].keys()) == 0:
                 print('Thermochimica calculation failed to converge')
@@ -295,7 +295,7 @@ class ThermochimicaOptima:
         validationPairs = []
         for points in self.validationPoints:
             validationKeys = list(points.keys())
-            for i in range(m):
+            for i in range(len(points)):
                 calcValues = []
                 dictTools.getParallelDictValues(points[validationKeys[i]]['values'],
                                                 points[validationKeys[i]]['values'],
