@@ -135,6 +135,7 @@ class ThermochimicaOptima:
         self.punit = 'atm'
         self.munit = 'moles'
         self.extraParams = {}
+        self.thermochimica_path = 'thermochimica'
     def close(self):
         for child in self.children:
             child.close()
@@ -287,7 +288,7 @@ class ThermochimicaOptima:
         intertags = createIntermediateDat(self.tagWindow.tags,self.datafile)
         # Use currying to package validationPoints with getPointValidationValues
         def getValues(tags, beta):
-            return getPointValidationValues(updateDat, self.validationPoints, tags, beta)
+            return getPointValidationValues(updateDat, self.validationPoints, tags, beta, self.thermochimica_path)
         # Get validation value/weight pairs
         validationPairs = []
         validationKeys = list(self.validationPoints.keys())
