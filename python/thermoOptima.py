@@ -337,25 +337,31 @@ class ThermochimicaOptima:
     def loadValidation(self, filename):
         jsonFile = open(filename,)
         try:
-            newPoints = json.load(jsonFile)
+            newVal = json.load(jsonFile)
             jsonFile.close()
         except:
             jsonFile.close()
             print('Data load failed')
             return
-        if len(newPoints) > 0:
-            startIndex = 0
-            i = 0
-            oldKeys = list(newPoints.keys())
-            # create a new dict to edit the keys to avoid overlapping keys
-            rekeyedPoints = dict([])
-            for point in oldKeys:
-                rekeyedPoints[startIndex + i] = newPoints.pop(point)
-                i += 1
-            self.validationPoints.append(rekeyedPoints)
-            print(f'{len(rekeyedPoints)} validation points loaded')
-        else:
-            print('No entries in validation JSON')
+        # Want to be able to save/load multiple validation dicts per file
+        # But also just the old single
+        # So if an old single dict, just turn it into an array
+        if isinstance(newVal,dict):
+            newVal = [newVal]
+        for newPoints in newVal:
+            if len(newPoints) > 0:
+                startIndex = 0
+                i = 0
+                oldKeys = list(newPoints.keys())
+                # create a new dict to edit the keys to avoid overlapping keys
+                rekeyedPoints = dict([])
+                for point in oldKeys:
+                    rekeyedPoints[startIndex + i] = newPoints.pop(point)
+                    i += 1
+                self.validationPoints.append(rekeyedPoints)
+                print(f'{len(rekeyedPoints)} validation points loaded')
+            else:
+                print('No entries in validation JSON')
     def writeFile(self):
         for n_val in range(len(self.validationPoints)):
             with open(f'validationPoints-{n_val}.ti', 'w') as inputFile:
