@@ -47,7 +47,7 @@ def getPointValidationValues(updateInputFunction, validation, tags, beta, thermo
     updateInputFunction(tags, beta)
 
     # Run input files and store data
-    for n_val in range(len(validationPoints)):
+    for n_val in range(len(validation)):
         subprocess.run([thermochimica_path + '/bin/RunCalculationList',f'validationPoints-{n_val}.ti'])
 
         jsonFile = open(thermochimica_path + '/thermoout.json',)
