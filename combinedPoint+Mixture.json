@@ -1,0 +1,141 @@
+[
+    {
+        "type": "mixing",
+        "0": {
+            "properties": [
+                "entropy"
+            ],
+            "phase": "BCCN",
+            "temperature": 1000,
+            "tunit": "C",
+            "endpoints": [
+                {
+                    "Pd": 1,
+                    "Mo": 0
+                },
+                {
+                    "Mo": 1,
+                    "Pd": 0
+                }
+            ],
+            "mixtures": [
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9
+            ],
+            "values": [
+                [
+                    0.5115443358275229,
+                    1.0219720607807687,
+                    1.5329487923396812,
+                    2.0438423022715,
+                    2.5546567726026694,
+                    3.0666294105612906,
+                    3.5673325029444385,
+                    4.088162895170768,
+                    4.598845589663441
+                ]
+            ]
+        }
+    },
+    {
+        "0": {
+            "state": [
+                2267.9,
+                1.0,
+                0.3,
+                0,
+                0,
+                0.7
+            ],
+            "values": {
+                "solution phases": {
+                    "BCCN": {
+                        "driving force": 0
+                    },
+                    "LiqN": {
+                        "driving force": 0
+                    }
+                }
+            }
+        },
+        "1": {
+            "state": [
+                2009.7,
+                1.0,
+                0.3,
+                0,
+                0,
+                0.7
+            ],
+            "values": {
+                "solution phases": {
+                    "BCCN": {
+                        "driving force": 0
+                    },
+                    "LiqN": {
+                        "driving force": 0
+                    },
+                    "HCPN": {
+                        "driving force": 0
+                    }
+                }
+            }
+        },
+        "2": {
+            "state": [
+                1637.8,
+                1.0,
+                0.3,
+                0,
+                0,
+                0.7
+            ],
+            "values": {
+                "solution phases": {
+                    "BCCN": {
+                        "driving force": 0
+                    },
+                    "FCCN": {
+                        "driving force": 0
+                    },
+                    "HCPN": {
+                        "driving force": 0
+                    }
+                }
+            }
+        },
+        "3": {
+            "state": [
+                1320.9,
+                1.0,
+                0.3,
+                0,
+                0,
+                0.7
+            ],
+            "values": {
+                "solution phases": {
+                    "BCCN": {
+                        "driving force": 0
+                    },
+                    "FCCN": {
+                        "driving force": 0
+                    }
+                },
+                "pure condensed phases": {
+                    "Pd11Mo9_s1(s)": {
+                        "driving force": 0
+                    }
+                }
+            }
+        },
+        "type": "point"
+    }
+]
