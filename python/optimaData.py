@@ -133,12 +133,9 @@ class PointValidationWindow:
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
         if event == 'Accept':
-            if len(self.points) == 0:
-                startIndex = 0
-            else:
-                startIndex = int(list(self.points.keys())[-1]) + 1
+            startIndex = 0
             # use newpoints to accumulate points entered here
-            newpoints = dict([])
+            newpoints = dict([('type','point')])
             temp, status = self.validEntry(values[f'-temp{0}-'])
             if not (status == 0 and temp >= 300):
                 print('Invalid temperature in line 0')
@@ -203,7 +200,7 @@ class PointValidationWindow:
                             valid = False
                     if valid:
                         referenceWindow.close()
-                        self.points.update(newpoints)
+                        self.points.append(newpoints)
                         self.close()
     def validEntry(self,value):
         if value == '':
