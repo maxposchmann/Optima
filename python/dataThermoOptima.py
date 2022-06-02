@@ -180,28 +180,14 @@ class PointValidationWindow:
                     print('Need at least one element present')
                     return
                 newpoints[startIndex + i] = dict([('state',[temp,pres]+concentrations)])
-            # Make window to enter reference data
-            headerLayout = [[sg.Text('Gibbs Energy')]]
-            rowLayout = [[sg.Input(key=f'-gibbs{i}-',size=inputSize)] for i in range(self.npoints)]
-            buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
-            referenceWindow = sg.Window('Reference Data', [headerLayout,rowLayout,buttonLayout], location = [800,0], finalize=True)
-            while True:
-                event, values = referenceWindow.read(timeout=timeout)
-                if event == sg.WIN_CLOSED or event == 'Cancel':
-                    break
-                if event == 'Accept':
-                    valid = True
-                    for i in range(self.npoints):
-                        try:
-                            gibbs = float(values[f'-gibbs{i}-'])
-                            newpoints[startIndex + i]['values'] = dict([('integral Gibbs energy',gibbs)])
-                        except ValueError:
-                            print(f'Invalid entry {values[f"-gibbs{i}-"]}')
-                            valid = False
-                    if valid:
-                        referenceWindow.close()
-                        self.points.append(newpoints)
-                        self.close()
+
+            # Open a ReferenceValueWindow (close existing if necessary)
+            try:
+                self.referenceWindow.close()
+            except AttributeError:
+                pass
+            self.referenceWindow = ReferenceValueWindow(self)
+            self.children.append(self.referenceWindow)
     def validEntry(self,value):
         if value == '':
             outValue = 0
@@ -218,3 +204,41 @@ class PointValidationWindow:
                 outValue = 0
                 status = -1
         return outValue, status
+
+class ReferenceValueWindow:
+    def __init__(self,parent):
+        self.parent = parent
+        self.windowList = self.parent.windowList
+        self.windowList.append(self)
+
+        self.open()
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in self.windowList:
+            self.windowList.remove(self)
+    def open(self):
+        # Make window to enter reference data
+        headerLayout = [[sg.Text('Gibbs Energy')]]
+        rowLayout = [[sg.Input(key=f'-gibbs{i}-',size=inputSize)] for i in range(self.parent.npoints)]
+        buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
+        self.sgw = sg.Window('Reference Data', [headerLayout,rowLayout,buttonLayout], location = [800,0], finalize=True)
+    def read(self):
+        event, values = self.sgw.read(timeout=timeout)
+        if event == sg.WIN_CLOSED or event == 'Cancel':
+            self.close()
+        if event == 'Accept':
+            valid = True
+            for i in range(self.npoints):
+                try:
+                    gibbs = float(values[f'-gibbs{i}-'])
+                    newpoints[startIndex + i]['values'] = dict([('integral Gibbs energy',gibbs)])
+                except ValueError:
+                    print(f'Invalid entry {values[f"-gibbs{i}-"]}')
+                    valid = False
+            if valid:
+                self.sgw.close()
+                self.parent.points.append(newpoints)
+                self.close()
