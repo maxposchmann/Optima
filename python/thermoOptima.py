@@ -121,6 +121,7 @@ class ThermochimicaOptima:
         self.maxIts = 30
         # self.datafile = 'fcctest.dat'
         self.datafile = 'kaye-drivingForce.dat'
+        self.thermochimica_path = 'thermochimica'
         # Parse datafile
         self.parseDatabase()
         # Set up window
@@ -162,7 +163,6 @@ class ThermochimicaOptima:
         self.punit = 'atm'
         self.munit = 'moles'
         self.extraParams = {}
-        self.thermochimica_path = 'thermochimica'
     def close(self):
         for child in self.children:
             child.close()
@@ -201,7 +201,7 @@ class ThermochimicaOptima:
                     print('Invalid number of points')
             npointsWindow.close()
             if npoints > 0:
-                self.pointWindow = dataThermoOptima.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
+                self.pointWindow = dataThermoOptima.PointValidationWindow(npoints,self.elements,self.phaseData,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
         elif event == 'Clear Validation Data':
             self.validationPoints = [] #dict([])
@@ -447,6 +447,17 @@ class ThermochimicaOptima:
                     if el[0] != 'e':
                         print(el+' not in list') # if the name is bogus (or e(phase)), discard
                 self.elements = list(filter(lambda a: a != el, self.elements))
+
+        # Parse phase/species names
+        subprocess.run([f'{self.thermochimica_path}/bin/ParseDataOnly',self.datafile])
+        jsonFile = open(f'{self.thermochimica_path}/phaseLists.json',)
+        try:
+            self.phaseData = json.load(jsonFile)
+            jsonFile.close()
+        except:
+            jsonFile.close()
+            print('Phase data load failed')
+            return
 
         # Automatically open a window for initial conditions
         try:
