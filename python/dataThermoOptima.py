@@ -3,6 +3,7 @@ import re
 import PySimpleGUI as sg
 import shutil
 import subprocess
+import dictTools
 
 timeout = 50
 inputSize = 16
@@ -186,7 +187,7 @@ class PointValidationWindow:
                 self.referenceWindow.close()
             except AttributeError:
                 pass
-            self.referenceWindow = ReferenceValueWindow(self)
+            self.referenceWindow = ReferenceValueWindow(self,newpoints,startIndex)
             self.children.append(self.referenceWindow)
     def validEntry(self,value):
         if value == '':
@@ -206,10 +207,17 @@ class PointValidationWindow:
         return outValue, status
 
 class ReferenceValueWindow:
-    def __init__(self,parent):
+    def __init__(self,parent,newpoints,startIndex):
         self.parent = parent
+        self.newpoints = newpoints
+        self.startIndex = startIndex
         self.windowList = self.parent.windowList
         self.windowList.append(self)
+
+        self.nValueColumns = 7
+        self.maxValueDepth = 3
+        self.valueOptions = [[] for _ in range(self.maxValueDepth)]
+        self.valueOptions[0] = ['integral Gibbs energy','heat capacity','enthalpy','entropy']
 
         self.open()
         self.children = []
@@ -221,24 +229,30 @@ class ReferenceValueWindow:
             self.windowList.remove(self)
     def open(self):
         # Make window to enter reference data
-        headerLayout = [[sg.Text('Gibbs Energy')]]
-        rowLayout = [[sg.Input(key=f'-gibbs{i}-',size=inputSize)] for i in range(self.parent.npoints)]
+        headerLayout = [[sg.Text('Validation Values')]]
+        def validationColumn(ind):
+            c = [[sg.Combo(self.valueOptions[row], key = f'-type-{ind}-{row}')] for row in range(self.maxValueDepth)]
+            c.extend([[sg.Input(key=f'-value-{i}-{ind}',size=inputSize)] for i in range(self.parent.npoints)])
+            return sg.Column(c, element_justification='c', expand_x=True, expand_y=True)
+        colLayout = [validationColumn(ind) for ind in range(self.nValueColumns)]
         buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
-        self.sgw = sg.Window('Reference Data', [headerLayout,rowLayout,buttonLayout], location = [800,0], finalize=True)
+        self.sgw = sg.Window('Reference Data', [headerLayout,colLayout,buttonLayout], location = [800,0], finalize=True)
     def read(self):
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
         if event == 'Accept':
-            valid = True
-            for i in range(self.npoints):
-                try:
-                    gibbs = float(values[f'-gibbs{i}-'])
-                    newpoints[startIndex + i]['values'] = dict([('integral Gibbs energy',gibbs)])
-                except ValueError:
-                    print(f'Invalid entry {values[f"-gibbs{i}-"]}')
-                    valid = False
-            if valid:
-                self.sgw.close()
-                self.parent.points.append(newpoints)
-                self.close()
+            for ind in range(self.nValueColumns):
+                keyList = [values[f'-type-{ind}-{row}'] for row in range(self.maxValueDepth)]
+                for i in range(self.parent.npoints):
+                    try:
+                        value = float(values[f'-value-{i}-{ind}'])
+                    except ValueError:
+                        # Blank/invalid values will be skipped
+                        pass
+                    else:
+                        dictTools.nestedDictWriter(self.newpoints[self.startIndex + i],value,*keyList)
+            self.sgw.close()
+            self.parent.points.append(self.newpoints)
+            self.close()
+            self.parent.close()
