@@ -5,7 +5,7 @@ import PySimpleGUI as sg
 import shutil
 import subprocess
 import json
-import optimaData
+import dataThermoOptima
 import optima
 import math
 import dictTools
@@ -201,7 +201,7 @@ class ThermochimicaOptima:
                     print('Invalid number of points')
             npointsWindow.close()
             if npoints > 0:
-                self.pointWindow = optimaData.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
+                self.pointWindow = dataThermoOptima.PointValidationWindow(npoints,self.elements,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
         elif event == 'Clear Validation Data':
             self.validationPoints = [] #dict([])
@@ -454,7 +454,7 @@ class ThermochimicaOptima:
             self.tagWindow.close()
         except AttributeError:
             pass
-        self.tagWindow = optimaData.TagWindow(self.datafile,windowList)
+        self.tagWindow = dataThermoOptima.TagWindow(self.datafile,windowList)
         self.children.append(self.tagWindow)
 
 class EditDataWindow:
