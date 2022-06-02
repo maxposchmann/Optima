@@ -105,11 +105,12 @@ class TagWindow:
         self.sgw['-con-'].update(not self.tags[self.tag]['optimize'])
 
 class PointValidationWindow:
-    def __init__(self,npoints,elements,points,windowList):
+    def __init__(self,npoints,elements,phaseData,points,windowList):
         self.windowList = windowList
         self.windowList.append(self)
         self.npoints = npoints
         self.elements = elements
+        self.phaseData = phaseData
         # Don't edit self.points along the way, just append to it at the end!
         # This array will have all the previously-accumulated points in it.
         # The plan is to allow multiple of these windows simultaneously.
@@ -215,9 +216,9 @@ class ReferenceValueWindow:
         self.windowList.append(self)
 
         self.nValueColumns = 7
-        self.maxValueDepth = 3
+        self.maxValueDepth = 5
         self.valueOptions = [[] for _ in range(self.maxValueDepth)]
-        self.valueOptions[0] = ['integral Gibbs energy','heat capacity','enthalpy','entropy']
+        self.valueOptions[0] = ['integral Gibbs energy','heat capacity','enthalpy','entropy','solution phases','pure condensed phases','elements']
 
         self.open()
         self.children = []
@@ -231,8 +232,8 @@ class ReferenceValueWindow:
         # Make window to enter reference data
         headerLayout = [[sg.Text('Validation Values')]]
         def validationColumn(ind):
-            c = [[sg.Combo(self.valueOptions[row], key = f'-type-{ind}-{row}')] for row in range(self.maxValueDepth)]
-            c.extend([[sg.Input(key=f'-value-{i}-{ind}',size=inputSize)] for i in range(self.parent.npoints)])
+            c = [[sg.Combo(self.valueOptions[row], key = f'-type-{ind}-{row}-', enable_events = True, size = 25)] for row in range(self.maxValueDepth)]
+            c.extend([[sg.Input(key=f'-value-{i}-{ind}-',size=inputSize)] for i in range(self.parent.npoints)])
             return sg.Column(c, element_justification='c', expand_x=True, expand_y=True)
         colLayout = [validationColumn(ind) for ind in range(self.nValueColumns)]
         buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
@@ -241,12 +242,12 @@ class ReferenceValueWindow:
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Cancel':
             self.close()
-        if event == 'Accept':
+        elif event == 'Accept':
             for ind in range(self.nValueColumns):
-                keyList = [values[f'-type-{ind}-{row}'] for row in range(self.maxValueDepth)]
+                keyList = [values[f'-type-{ind}-{row}-'] for row in range(self.maxValueDepth)]
                 for i in range(self.parent.npoints):
                     try:
-                        value = float(values[f'-value-{i}-{ind}'])
+                        value = float(values[f'-value-{i}-{ind}-'])
                     except ValueError:
                         # Blank/invalid values will be skipped
                         pass
@@ -256,3 +257,35 @@ class ReferenceValueWindow:
             self.parent.points.append(self.newpoints)
             self.close()
             self.parent.close()
+        elif '-type-' in event:
+            print(event)
+            print(values[event])
+            # Recover indices from event key
+            eventSplit = event.split('-')
+            ind = int(eventSplit[2])
+            row = int(eventSplit[3])
+            def resetFromRow():
+                for r in range(row + 1,self.maxValueDepth):
+                    self.sgw[f'-type-{ind}-{r}-'].update(value='', values=[])
+
+            if values[event] == 'elements':
+                resetFromRow()
+                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=self.parent.elements)
+                if row == 0:
+                    self.sgw[f'-type-{ind}-{row+2}-'].update(value='element potential', values=['element potential'])
+                elif row == 2:
+                    self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles of element in phase','mole fraction of phase by element','mole fraction of element by phase'])
+            elif values[event] == 'solution phases':
+                resetFromRow()
+                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['solution phases'].keys()))
+                self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles','driving force','species','sublattices','elements'])
+            elif values[event] == 'pure condensed phases':
+                resetFromRow()
+                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['pure condensed phases'].keys()))
+                self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles','chemical potential','driving force','elements'])
+            elif values[event] == 'species':
+                resetFromRow()
+                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['solution phases'][values[f'-type-{ind}-{1}-']]['species']))
+                self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['mole fraction','moles','chemical potential'])
+            elif row == 0:
+                resetFromRow()
