@@ -24,3 +24,21 @@ def getDictKeyString(dictionary,activeString,allStrings):
     else:
         # end of keys
         allStrings.append(activeString)
+
+# Writes a nested dict from list of keys
+def nestedDictWriter(dictionary,value,*keylist):
+    currentDict = dictionary
+    lastKey = ''
+    for key in keylist:
+        if not key:
+            # If the current key is blank, the list terminated early
+            currentDict[lastKey] = value
+            return
+        # Otherwise move down a level and continue
+        if lastKey:
+            currentDict = currentDict[lastKey]
+        if key not in currentDict.keys():
+            # If key doesn't exist, create a dict there
+            currentDict[key] = dict()
+        lastKey = key
+    currentDict[lastKey] = value
