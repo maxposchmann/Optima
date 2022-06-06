@@ -244,7 +244,7 @@ class ReferenceValueWindow:
             self.close()
         elif event == 'Accept':
             for ind in range(self.nValueColumns):
-                keyList = [values[f'-type-{ind}-{row}-'] for row in range(self.maxValueDepth)]
+                keyList = ['values'] + [values[f'-type-{ind}-{row}-'] for row in range(self.maxValueDepth)]
                 for i in range(self.parent.npoints):
                     try:
                         value = float(values[f'-value-{i}-{ind}-'])
@@ -258,8 +258,6 @@ class ReferenceValueWindow:
             self.close()
             self.parent.close()
         elif '-type-' in event:
-            print(event)
-            print(values[event])
             # Recover indices from event key
             eventSplit = event.split('-')
             ind = int(eventSplit[2])
