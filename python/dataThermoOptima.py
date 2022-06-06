@@ -138,17 +138,17 @@ class PointValidationWindow:
             startIndex = 0
             # use newpoints to accumulate points entered here
             newpoints = dict([('type','point')])
-            temp, status = self.validEntry(values[f'-temp{0}-'])
+            temp, status = validEntry(values[f'-temp{0}-'])
             if not (status == 0 and temp >= 300):
                 print('Invalid temperature in line 0')
                 return
-            pres, status = self.validEntry(values[f'-pres{0}-'])
+            pres, status = validEntry(values[f'-pres{0}-'])
             if not (status == 0 and pres > 0):
                 print('Invalid pressure in line 0')
                 return
             concentrations = []
             for element in self.elements:
-                conc, status = self.validEntry(values[f'-{element}{0}-'])
+                conc, status = validEntry(values[f'-{element}{0}-'])
                 concentrations.append(conc)
             if not max(concentrations) > 0:
                 print('Need at least one element present')
@@ -158,13 +158,13 @@ class PointValidationWindow:
                 lastTemp = temp
                 lastPres = pres
                 lastConcentrations = concentrations
-                temp, status = self.validEntry(values[f'-temp{i}-'])
+                temp, status = validEntry(values[f'-temp{i}-'])
                 if status == 1:
                     temp = lastTemp
                 elif not (status >= 0 and temp >= 300):
                     print(f'Invalid temperature in line {i+1}')
                     return
-                pres, status = self.validEntry(values[f'-pres{i}-'])
+                pres, status = validEntry(values[f'-pres{i}-'])
                 if status == 1:
                     pres = lastPres
                 elif not (status >= 0 and pres > 0):
@@ -172,7 +172,7 @@ class PointValidationWindow:
                     return
                 concentrations = []
                 for element in self.elements:
-                    conc, status = self.validEntry(values[f'-{element}{i}-'])
+                    conc, status = validEntry(values[f'-{element}{i}-'])
                     if status == -1:
                         return
                     elif status == 1:
@@ -190,22 +190,6 @@ class PointValidationWindow:
                 pass
             self.referenceWindow = ReferenceValueWindow(self,newpoints,startIndex)
             self.children.append(self.referenceWindow)
-    def validEntry(self,value):
-        if value == '':
-            outValue = 0
-            status = 1
-        else:
-            try:
-                outValue = float(value)
-                if outValue >= 0:
-                    status = 0
-                else:
-                    raise ValueError
-            except ValueError:
-                print(f'Invalid entry {value}')
-                outValue = 0
-                status = -1
-        return outValue, status
 
 class ReferenceValueWindow:
     def __init__(self,parent,newpoints,startIndex):
@@ -368,3 +352,20 @@ class MixtureValidationWindow:
         stateLayout = sg.Column([tempLayout,presLayout,massLayout,concLayout,phaseSelect],vertical_alignment='t')
         valueLayout = sg.Column([propertySelect,mixDoubleCol],vertical_alignment='t')
         self.sgw = sg.Window('Validation Data', [[stateLayout,valueLayout],[buttonLayout]], location = [800,0], finalize=True)
+
+def validEntry(value):
+    if value == '':
+        outValue = 0
+        status = 1
+    else:
+        try:
+            outValue = float(value)
+            if outValue >= 0:
+                status = 0
+            else:
+                raise ValueError
+        except ValueError:
+            print(f'Invalid entry {value}')
+            outValue = 0
+            status = -1
+    return outValue, status
