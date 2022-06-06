@@ -309,6 +309,7 @@ class MixtureValidationWindow:
         if self in self.windowList:
             self.windowList.remove(self)
     def open(self):
+        # Elements for left (state) column
         tempLayout = [sg.Column([[sg.Text('Temperature')],[sg.Input(key='-temperature-',size=(inputSize,1))],
                       [sg.Text('Temperature unit')],[sg.Combo(['K', 'C', 'F'],default_value='K',key='-tunit-')]],vertical_alignment='t')
                      ]
@@ -326,30 +327,44 @@ class MixtureValidationWindow:
         massLayout = [sg.Column([
                         [sg.Text('Mass unit')],
                         [sg.Combo(['moles', 'kg', 'atoms', 'g'],default_value='moles',key='-munit-')]
-                        ],vertical_alignment='t')
-                     ]
+                        ],vertical_alignment='t')]
         phaseList = list(self.phaseData['solution phases'].keys())
         phaseSelect = [sg.Column(
                        [
                         [sg.Text('Phase')],
                         [sg.Combo(phaseList, default_value = phaseList[0], key = '-phaseSelect-')]
-                       ],vertical_alignment='t')
-                      ]
-        if (len(self.elements) < 8):
-            inputLayout = [tempLayout,
-                           presLayout,
-                           [sg.Column(elem1Layout,vertical_alignment='t'),
-                            sg.Column(elem2Layout,key='-composition2-',vertical_alignment='t')],
-                           massLayout,
-                           phaseSelect
-                          ]
+                       ],vertical_alignment='t')]
+        propertyList = ['integral Gibbs energy', 'enthalpy', 'entropy']
+        propertySelect = [sg.Column(
+                           [
+                            [sg.Text('Mixing Property')],
+                            [sg.Combo(propertyList, default_value = propertyList[0], key = '-propertySelect-')]
+                           ],vertical_alignment='t')]
+        if len(self.elements) < 8:
+            concLayout = [sg.Column(elem1Layout,vertical_alignment='t'),
+                          sg.Column(elem2Layout,key='-composition2-',vertical_alignment='t')
+                         ]
         else:
-            inputLayout = [tempLayout,
-                           presLayout,
-                           [sg.Column(elem1Layout,vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True),
-                            sg.Column(elem2Layout,vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True,key='-composition2-',visible=False)],
-                           massLayout,
-                           phaseSelect
-                          ]
-        buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
-        self.sgw = sg.Window('Validation Data', [inputLayout,buttonLayout], location = [800,0], finalize=True)
+            concLayout = [sg.Column(elem1Layout,vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True),
+                          sg.Column(elem2Layout,vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True,key='-composition2-',visible=False)
+                         ]
+
+        # Elements for right (values) column
+        mixtures = [[sg.Text('Concentration of Endpoint 2')]]
+        mixValues = [[sg.Text('Property Value')]]
+        mixDoubleCol = [[sg.Text('Concentration of Endpoint 2'),sg.Text('Property Value')]]
+        for i in range(self.npoints):
+            mixtures.append([sg.Input(key=f'-mixture-{i}-',size=(inputSize,1))])
+            mixValues.append([sg.Input(key=f'-mixValue-{i}-',size=(inputSize,1))])
+        mixtures = sg.Column(mixtures,vertical_alignment='t')
+        mixValues = sg.Column(mixValues,vertical_alignment='t')
+        if self.npoints < 25:
+            mixDoubleCol = [sg.Column([[mixtures,mixValues]],vertical_alignment='t')]
+        else:
+            mixDoubleCol = [sg.Column([[mixtures,mixValues]],vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True)]
+
+        # Collect final columns
+        buttonLayout = [sg.Button('Accept'),sg.Button('Cancel')]
+        stateLayout = sg.Column([tempLayout,presLayout,massLayout,concLayout,phaseSelect],vertical_alignment='t')
+        valueLayout = sg.Column([propertySelect,mixDoubleCol],vertical_alignment='t')
+        self.sgw = sg.Window('Validation Data', [[stateLayout,valueLayout],[buttonLayout]], location = [800,0], finalize=True)
