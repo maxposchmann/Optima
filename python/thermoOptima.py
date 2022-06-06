@@ -514,18 +514,21 @@ class EditDataWindow:
         if event == sg.WIN_CLOSED or event == 'Exit':
             self.close()
         elif event == '-dataList-':
-            self.point = values['-dataList-'][0][0]
-            elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[self.point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
+            if not values['-dataList-']:
+                return
+            self.setIndex = values['-dataList-'][0][0]
+            self.point = values['-dataList-'][0][1]
+            elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[self.setIndex][self.point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
             valValues = []
-            dictTools.getParallelDictValues(self.points[self.point]['values'],self.points[self.point]['values'],valValues)
+            dictTools.getParallelDictValues(self.points[self.setIndex][self.point]['values'],self.points[self.setIndex][self.point]['values'],valValues)
             actStr = ''
             valKeys = []
-            dictTools.getDictKeyString(self.points[self.point]['values'],actStr,valKeys)
+            dictTools.getDictKeyString(self.points[self.setIndex][self.point]['values'],actStr,valKeys)
             validationDetails = '\n'.join([f'{valKeys[i]}: {str(valValues[i])}' for i in range(len(valValues))])
             details = (
                         'Calculated State:\n'
-                      +f'Temperature: {self.points[self.point]["state"][0]:6.2f} K\n'
-                      +f'Pressure: {self.points[self.point]["state"][1]:6.2f} atm\n'
+                      +f'Temperature: {self.points[self.setIndex][self.point]["state"][0]:6.2f} K\n'
+                      +f'Pressure: {self.points[self.setIndex][self.point]["state"][1]:6.2f} atm\n'
                       +elementDetails
                       +'\nValidation Data:\n'
                       +validationDetails
@@ -550,33 +553,40 @@ class EditDataWindow:
                     return
             self.getData()
         elif event == 'Delete Point':
-            del self.points[self.point]
+            del self.points[self.setIndex][self.point]
             self.getData()
         elif event == 'Edit Point':
             try:
-                self.points[self.point]['state'][0] = float(values['-temp-'])
+                self.points[self.setIndex][self.point]['state'][0] = float(values['-temp-'])
             except ValueError:
                 pass
             try:
-                self.points[self.point]['state'][1] = float(values['-pres-'])
+                self.points[self.setIndex][self.point]['state'][1] = float(values['-pres-'])
             except ValueError:
                 pass
             for i in range(len(self.elements)):
                 try:
-                    self.points[self.point]['state'][i+2] = float(values[f'-{self.elements[i]}-'])
+                    self.points[self.setIndex][self.point]['state'][i+2] = float(values[f'-{self.elements[i]}-'])
                 except ValueError:
                     pass
             try:
-                self.points[self.point]["values"]['integral Gibbs energy'] = float(values['-gibbs-'])
+                self.points[self.setIndex][self.point]["values"]['integral Gibbs energy'] = float(values['-gibbs-'])
             except ValueError:
                 pass
             self.getData()
     def getData(self):
         self.data = []
-        for point in self.points.keys():
-            if self.tlo <= self.points[point]["state"][0] and self.thi >= self.points[point]["state"][0]:
-                self.data.append([point, f'{self.points[point]["state"][0]:6.2f} K'
-                                        +f'{self.points[point]["state"][1]:6.2f} atm'
+        i = -1
+        for pointSet in self.points:
+            i += 1
+            if pointSet['type'] not in ('point'):
+                continue
+            for point in pointSet:
+                if point == 'type':
+                    continue
+                if self.tlo <= pointSet[point]["state"][0] and self.thi >= pointSet[point]["state"][0]:
+                    self.data.append([i, point, f'{pointSet[point]["state"][0]:6.2f} K'
+                                            +f'{pointSet[point]["state"][1]:6.2f} atm'
                                  ])
         self.sgw['-dataList-'].update(self.data)
 
