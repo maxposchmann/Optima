@@ -183,6 +183,8 @@ class ThermochimicaOptima:
             # Get the number of points to be added. This window will (should) be blocking.
             npoints = 0
             npointsLayout = [[sg.Text('Number of validation calculations:'),sg.Input(key = '-npoints-',size = [inputSize,1])],
+                             # [sg.Combo(['Points','Mixtures'], default_value = 'Points', key = '-valType-')],
+                             [sg.Combo(['Points','Mixtures'], default_value = 'Mixtures', key = '-valType-')],
                              [sg.Button('Accept'),sg.Button('Cancel')]]
             npointsWindow = sg.Window('Invalid value notification',npointsLayout,location=[400,0],finalize=True,keep_on_top=True)
             while True:
