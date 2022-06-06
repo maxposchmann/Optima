@@ -352,6 +352,52 @@ class MixtureValidationWindow:
         stateLayout = sg.Column([tempLayout,presLayout,massLayout,concLayout,phaseSelect],vertical_alignment='t')
         valueLayout = sg.Column([propertySelect,mixDoubleCol],vertical_alignment='t')
         self.sgw = sg.Window('Validation Data', [[stateLayout,valueLayout],[buttonLayout]], location = [800,0], finalize=True)
+    def read(self):
+        event, values = self.sgw.read(timeout=timeout)
+        if event == sg.WIN_CLOSED or event == 'Cancel':
+            self.close()
+        if event == 'Accept':
+            startIndex = 0
+            # use newpoints to accumulate points entered here
+            newpoints = dict([('type','mixing')])
+            newpoints[str(startIndex)] = dict()
+            temp, status = validEntry(values['-temperature-'])
+            if not (status == 0 and temp >= 300):
+                print('Invalid temperature in line 0')
+                return
+            pres, status = validEntry(values['-pressure-'])
+            if not (status == 0 and pres > 0):
+                pres = 1
+            concentrations = [dict(),dict()]
+            for element in self.elements:
+                conc, status = validEntry(values[f'-{element}1-'])
+                concentrations[0][element] = conc
+                conc, status = validEntry(values[f'-{element}2-'])
+                concentrations[1][element] = conc
+            if not max(concentrations[0].values()) > 0:
+                print('Need at least one element present in endpoint 1')
+                return
+            if not max(concentrations[1].values()) > 0:
+                print('Need at least one element present in endpoint 2')
+                return
+            newpoints[str(startIndex)]["properties"] = [values['-propertySelect-']]
+            newpoints[str(startIndex)]["phase"] = values['-phaseSelect-']
+            newpoints[str(startIndex)]["temperature"] = temp
+            newpoints[str(startIndex)]["tunit"] = values['-tunit-']
+            newpoints[str(startIndex)]["endpoints"] = concentrations
+
+            newpoints[str(startIndex)]["mixtures"] = []
+            newpoints[str(startIndex)]["values"] = [[]]
+            for i in range(self.npoints):
+                conc, cstat = validEntry(values[f'-mixture-{i}-'])
+                valu, vstat = validEntry(values[f'-mixValue-{i}-'])
+                if cstat == 0 and vstat == 0 and conc >= 0 and conc <= 1:
+                    newpoints[str(startIndex)]["mixtures"].append(conc)
+                    newpoints[str(startIndex)]["values"][0].append(valu)
+
+            # Write and close
+            self.points.append(newpoints)
+            self.close()
 
 def validEntry(value):
     if value == '':
