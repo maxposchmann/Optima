@@ -83,15 +83,39 @@ def getPointValidationValues(updateInputFunction, validation, tags, beta, thermo
 
                 phase = validation[n_val][validationKeys[i]]['phase']
                 temperature = validation[n_val][validationKeys[i]]['temperature']
+                # Get default values if not specified
                 if 'tunit' in validation[n_val][validationKeys[i]].keys():
                     tunit = validation[n_val][validationKeys[i]]['tunit']
                 else:
                     tunit = 'K'
+                if 'munit' in validation[n_val][validationKeys[i]].keys():
+                    munit = validation[n_val][validationKeys[i]]['munit']
+                else:
+                    munit = 'moles'
+                if 'punit' in validation[n_val][validationKeys[i]].keys():
+                    punit = validation[n_val][validationKeys[i]]['punit']
+                else:
+                    punit = 'atm'
+                if 'pressure' in validation[n_val][validationKeys[i]].keys():
+                    pressure = validation[n_val][validationKeys[i]]['pressure']
+                else:
+                    pressure = 1
                 endpoints = validation[n_val][validationKeys[i]]['endpoints']
                 mixtures = validation[n_val][validationKeys[i]]['mixtures']
+
                 # Loop over all properties used
                 for property in validation[n_val][validationKeys[i]]['properties']:
-                    calcValues = propertyOfMixing.propertyOfMixing(property, phase, temperature, endpoints, mixtures, database, tunit = tunit, thermochimica_path = thermochimica_path)
+                    calcValues = propertyOfMixing.propertyOfMixing(property,
+                                                                   phase,
+                                                                   temperature,
+                                                                   endpoints,
+                                                                   mixtures,
+                                                                   database,
+                                                                   tunit = tunit,
+                                                                   munit = munit,
+                                                                   punit = punit,
+                                                                   pressure = pressure,
+                                                                   thermochimica_path = thermochimica_path)
                     f.extend(calcValues)
 
     f = np.array(f)
