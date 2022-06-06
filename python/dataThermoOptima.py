@@ -279,7 +279,7 @@ class ReferenceValueWindow:
                 self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles','driving force','species','sublattices','elements'])
             elif values[event] == 'pure condensed phases':
                 resetFromRow()
-                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['pure condensed phases'].keys()))
+                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=self.parent.phaseData['pure condensed phases'])
                 self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles','chemical potential','driving force','elements'])
             elif values[event] == 'species':
                 resetFromRow()
