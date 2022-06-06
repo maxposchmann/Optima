@@ -287,3 +287,69 @@ class ReferenceValueWindow:
                 self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['mole fraction','moles','chemical potential'])
             elif row == 0:
                 resetFromRow()
+
+class MixtureValidationWindow:
+    def __init__(self,npoints,elements,phaseData,points,windowList):
+        self.windowList = windowList
+        self.windowList.append(self)
+        self.npoints = npoints
+        self.elements = elements
+        self.phaseData = phaseData
+        # Don't edit self.points along the way, just append to it at the end!
+        # This array will have all the previously-accumulated points in it.
+        # The plan is to allow multiple of these windows simultaneously.
+        self.points = points
+
+        self.open()
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in self.windowList:
+            self.windowList.remove(self)
+    def open(self):
+        tempLayout = [sg.Column([[sg.Text('Temperature')],[sg.Input(key='-temperature-',size=(inputSize,1))],
+                      [sg.Text('Temperature unit')],[sg.Combo(['K', 'C', 'F'],default_value='K',key='-tunit-')]],vertical_alignment='t')
+                     ]
+        presLayout = [sg.Column([[sg.Text('Pressure')],[sg.Input(key='-pressure-',size=(inputSize,1))],
+                      [sg.Text('Pressure unit')],[sg.Combo(['atm', 'Pa', 'bar'],default_value='atm',key='-punit-')]],vertical_alignment='t')
+                     ]
+        elem1Layout = [[sg.Text('Endpoint 1')]]
+        elem2Layout = [[sg.Text('Endpoint 2')]]
+        for el in self.elements:
+            elem1Layout.append([sg.Text(el)])
+            elem1Layout.append([sg.Input(key=f'-{el}1-',size=(inputSize,1))])
+        for el in self.elements:
+            elem2Layout.append([sg.Text(el)])
+            elem2Layout.append([sg.Input(key=f'-{el}2-',size=(inputSize,1))])
+        massLayout = [sg.Column([
+                        [sg.Text('Mass unit')],
+                        [sg.Combo(['moles', 'kg', 'atoms', 'g'],default_value='moles',key='-munit-')]
+                        ],vertical_alignment='t')
+                     ]
+        phaseList = list(self.phaseData['solution phases'].keys())
+        phaseSelect = [sg.Column(
+                       [
+                        [sg.Text('Phase')],
+                        [sg.Combo(phaseList, default_value = phaseList[0], key = '-phaseSelect-')]
+                       ],vertical_alignment='t')
+                      ]
+        if (len(self.elements) < 8):
+            inputLayout = [tempLayout,
+                           presLayout,
+                           [sg.Column(elem1Layout,vertical_alignment='t'),
+                            sg.Column(elem2Layout,key='-composition2-',vertical_alignment='t')],
+                           massLayout,
+                           phaseSelect
+                          ]
+        else:
+            inputLayout = [tempLayout,
+                           presLayout,
+                           [sg.Column(elem1Layout,vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True),
+                            sg.Column(elem2Layout,vertical_alignment='t', scrollable = True, vertical_scroll_only = True, expand_y = True,key='-composition2-',visible=False)],
+                           massLayout,
+                           phaseSelect
+                          ]
+        buttonLayout = [[sg.Button('Accept'),sg.Button('Cancel')]]
+        self.sgw = sg.Window('Validation Data', [inputLayout,buttonLayout], location = [800,0], finalize=True)

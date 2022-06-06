@@ -201,7 +201,10 @@ class ThermochimicaOptima:
                     print('Invalid number of points')
             npointsWindow.close()
             if npoints > 0:
-                self.pointWindow = dataThermoOptima.PointValidationWindow(npoints,self.elements,self.phaseData,self.validationPoints,windowList)
+                if values['-valType-'] == 'Points':
+                    self.pointWindow = dataThermoOptima.PointValidationWindow(npoints,self.elements,self.phaseData,self.validationPoints,windowList)
+                elif values['-valType-'] == 'Mixtures':
+                    self.pointWindow = dataThermoOptima.MixtureValidationWindow(npoints,self.elements,self.phaseData,self.validationPoints,windowList)
                 self.children.append(self.pointWindow)
         elif event == 'Clear Validation Data':
             self.validationPoints = [] #dict([])
