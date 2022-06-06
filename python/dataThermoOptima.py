@@ -384,6 +384,9 @@ class MixtureValidationWindow:
             newpoints[str(startIndex)]["phase"] = values['-phaseSelect-']
             newpoints[str(startIndex)]["temperature"] = temp
             newpoints[str(startIndex)]["tunit"] = values['-tunit-']
+            newpoints[str(startIndex)]["pressure"] = pres
+            newpoints[str(startIndex)]["punit"] = values['-punit-']
+            newpoints[str(startIndex)]["munit"] = values['-munit-']
             newpoints[str(startIndex)]["endpoints"] = concentrations
 
             newpoints[str(startIndex)]["mixtures"] = []
