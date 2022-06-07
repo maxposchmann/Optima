@@ -42,3 +42,22 @@ def nestedDictWriter(dictionary,value,*keylist):
             currentDict[key] = dict()
         lastKey = key
     currentDict[lastKey] = value
+
+# Deletes a key from a nested dict using list of keys
+def nestedDictDeleter(dictionary,*keylist):
+    currentDict = dictionary
+    lastKey = ''
+    # Iterate down the stack to end key
+    for key in keylist:
+        if not key:
+            # If the current key is blank, the list terminated early
+            del currentDict[lastKey]
+            return
+        # Otherwise move down a level and continue
+        if lastKey:
+            currentDict = currentDict[lastKey]
+        if key not in currentDict.keys():
+            # If key doesn't exist, return
+            return
+        lastKey = key
+    del currentDict[lastKey]
