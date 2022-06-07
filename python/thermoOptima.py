@@ -501,6 +501,19 @@ class EditDataWindow:
         self.points = points
         self.elements = elements
         windowList.append(self)
+        self.open()
+
+        self.tlo = -np.Inf
+        self.thi = np.Inf
+        self.getData()
+        self.children = []
+    def close(self):
+        for child in self.children:
+            child.close()
+        self.sgw.close()
+        if self in windowList:
+            windowList.remove(self)
+    def open(self):
         dataColumn = [
             [sg.Text('Data Points')],
             [sg.Listbox(values=[], enable_events=True, size=(30, 50), key='-dataList-')]
@@ -527,16 +540,6 @@ class EditDataWindow:
                 sg.Column(outputColumn, element_justification='c', expand_x=True, expand_y=True)
             ], orientation='h', k='-PANE-')]],
             location = [100,0], finalize=True)
-        self.tlo = -np.Inf
-        self.thi = np.Inf
-        self.getData()
-        self.children = []
-    def close(self):
-        for child in self.children:
-            child.close()
-        self.sgw.close()
-        if self in windowList:
-            windowList.remove(self)
     def read(self):
         event, values = self.sgw.read(timeout=timeout)
         if event == sg.WIN_CLOSED or event == 'Exit':
