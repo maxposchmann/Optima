@@ -235,7 +235,7 @@ class ThermochimicaOptima:
             self.validationPoints = [] #dict([])
             print('Validation data cleared')
         elif event == 'Edit Validation Data':
-            editDataWindow = EditDataWindow(self.validationPoints,self.elements)
+            editDataWindow = EditDataWindow(self.validationPoints,self.elements,self.phaseData)
             self.children.append(editDataWindow)
         elif event == 'Save Validation Data':
             if values['-saveValidationName-'] == '':
@@ -497,10 +497,16 @@ class ThermochimicaOptima:
         self.children.append(self.tagWindow)
 
 class EditDataWindow:
-    def __init__(self,points,elements):
+    def __init__(self,points,elements,phaseData):
         self.points = points
         self.elements = elements
+        self.phaseData = phaseData
         windowList.append(self)
+
+        self.maxValueDepth = 5
+        self.valueOptions = [[] for _ in range(self.maxValueDepth)]
+        self.valueOptions[0] = ['integral Gibbs energy','heat capacity','enthalpy','entropy','solution phases','pure condensed phases','elements']
+
         self.open()
 
         self.tlo = -np.Inf
@@ -524,11 +530,17 @@ class EditDataWindow:
             [sg.Text(key = '-status-')],
             [sg.Text('Change Values', font='underline')],
             [sg.Text('Temperature'), sg.Input(key='-temp-',size=(inputSize,1))],
-            [sg.Text('Pressure'), sg.Input(key='-pres-',size=(inputSize,1))]]
+            [sg.Text('Pressure'), sg.Input(key='-pres-',size=(inputSize,1))]
+            ]
+        # Create mass rows
         outputColumn.extend([[sg.Text(f'{self.elements[i]} concentration'),sg.Input(key=f'-{self.elements[i]}-',size=(inputSize,1))] for i in range(len(self.elements))])
+        # Buttons for state
+        outputColumn.extend([[sg.Button('Update State', disabled = True), sg.Button('Delete Point', disabled = True)]])
+        # Dropdowns for values
+        outputColumn.extend([[sg.Combo(self.valueOptions[row], key = f'-type-{row}-', enable_events = True, size = 25)] for row in range(self.maxValueDepth)])
         outputColumn.extend([
-            [sg.Text('Gibbs Energy'), sg.Input(key='-gibbs-',size=(inputSize,1))],
-            [sg.Button('Edit Point', disabled = True), sg.Button('Delete Point', disabled = True)],
+            [sg.Input(key=f'-value-',size=inputSize)],
+            [sg.Button('Update Value', disabled = True), sg.Button('Delete Value', disabled = True)],
             [sg.Text('Filter Points', font='underline')],
             [sg.Text('Temperature Range:')],
             [sg.Input(key='-tfilterlow-',size=(inputSize,1)),sg.Input(key='-tfilterhi-',size=(inputSize,1))],
@@ -549,24 +561,11 @@ class EditDataWindow:
                 return
             self.setIndex = values['-dataList-'][0][0]
             self.point = values['-dataList-'][0][1]
-            elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[self.setIndex][self.point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
-            valValues = []
-            dictTools.getParallelDictValues(self.points[self.setIndex][self.point]['values'],self.points[self.setIndex][self.point]['values'],valValues)
-            actStr = ''
-            valKeys = []
-            dictTools.getDictKeyString(self.points[self.setIndex][self.point]['values'],actStr,valKeys)
-            validationDetails = '\n'.join([f'{valKeys[i]}: {str(valValues[i])}' for i in range(len(valValues))])
-            details = (
-                        'Calculated State:\n'
-                      +f'Temperature: {self.points[self.setIndex][self.point]["state"][0]:6.2f} K\n'
-                      +f'Pressure: {self.points[self.setIndex][self.point]["state"][1]:6.2f} atm\n'
-                      +elementDetails
-                      +'\nValidation Data:\n'
-                      +validationDetails
-                     )
-            self.sgw['-details-'].update(details)
-            self.sgw.Element('Edit Point').Update(disabled = False)
+            self.updateDetails()
+            self.sgw.Element('Update State').Update(disabled = False)
             self.sgw.Element('Delete Point').Update(disabled = False)
+            self.sgw.Element('Update Value').Update(disabled = False)
+            self.sgw.Element('Delete Value').Update(disabled = False)
         elif event == 'Apply Filter':
             try:
                 self.tlo = float(values['-tfilterlow-'])
@@ -586,7 +585,11 @@ class EditDataWindow:
         elif event == 'Delete Point':
             del self.points[self.setIndex][self.point]
             self.getData()
-        elif event == 'Edit Point':
+            self.sgw.Element('Update State').Update(disabled = True)
+            self.sgw.Element('Delete Point').Update(disabled = True)
+            self.sgw.Element('Update Value').Update(disabled = True)
+            self.sgw.Element('Delete Value').Update(disabled = True)
+        elif event == 'Update State':
             try:
                 self.points[self.setIndex][self.point]['state'][0] = float(values['-temp-'])
             except ValueError:
@@ -600,11 +603,57 @@ class EditDataWindow:
                     self.points[self.setIndex][self.point]['state'][i+2] = float(values[f'-{self.elements[i]}-'])
                 except ValueError:
                     pass
-            try:
-                self.points[self.setIndex][self.point]["values"]['integral Gibbs energy'] = float(values['-gibbs-'])
-            except ValueError:
-                pass
             self.getData()
+            self.updateDetails()
+        elif event == 'Update Value':
+            keyList = ['values'] + [values[f'-type-{row}-'] for row in range(self.maxValueDepth)]
+            try:
+                value = float(values[f'-value-'])
+            except ValueError:
+                # Blank/invalid values will be skipped
+                pass
+            else:
+                dictTools.nestedDictWriter(self.points[self.setIndex][self.point],value,*keyList)
+            self.updateDetails()
+        elif event == 'Delete Value':
+            if not values['-type-0-']:
+                return
+            keyList = ['values'] + [values[f'-type-{row}-'] for row in range(self.maxValueDepth)]
+            try:
+                dictTools.nestedDictDeleter(self.points[self.setIndex][self.point],*keyList)
+            except KeyError:
+                # Skip if key not present
+                pass
+            self.updateDetails()
+        elif '-type-' in event:
+            # Recover indices from event key
+            eventSplit = event.split('-')
+            row = int(eventSplit[2])
+            def resetFromRow():
+                for r in range(row + 1,self.maxValueDepth):
+                    self.sgw[f'-type-{r}-'].update(value='', values=[])
+
+            if values[event] == 'elements':
+                resetFromRow()
+                self.sgw[f'-type-{row+1}-'].update(value='', values=self.elements)
+                if row == 0:
+                    self.sgw[f'-type-{row+2}-'].update(value='element potential', values=['element potential'])
+                elif row == 2:
+                    self.sgw[f'-type-{row+2}-'].update(value='', values=['moles of element in phase','mole fraction of phase by element','mole fraction of element by phase'])
+            elif values[event] == 'solution phases':
+                resetFromRow()
+                self.sgw[f'-type-{row+1}-'].update(value='', values=list(self.phaseData['solution phases'].keys()))
+                self.sgw[f'-type-{row+2}-'].update(value='', values=['moles','driving force','species','sublattices','elements'])
+            elif values[event] == 'pure condensed phases':
+                resetFromRow()
+                self.sgw[f'-type-{row+1}-'].update(value='', values=self.phaseData['pure condensed phases'])
+                self.sgw[f'-type-{row+2}-'].update(value='', values=['moles','chemical potential','driving force','elements'])
+            elif values[event] == 'species':
+                resetFromRow()
+                self.sgw[f'-type-{row+1}-'].update(value='', values=list(self.phaseData['solution phases'][values[f'-type-{1}-']]['species']))
+                self.sgw[f'-type-{row+2}-'].update(value='', values=['mole fraction','moles','chemical potential'])
+            elif row == 0:
+                resetFromRow()
     def getData(self):
         self.data = []
         i = -1
@@ -620,6 +669,26 @@ class EditDataWindow:
                                             +f'{pointSet[point]["state"][1]:6.2f} atm'
                                  ])
         self.sgw['-dataList-'].update(self.data)
+    def updateDetails(self):
+        elementDetails = ''.join([f'{self.elements[i]} concentration: {self.points[self.setIndex][self.point]["state"][i+2]:6.2f}\n' for i in range(len(self.elements))])
+        valValues = []
+        try:
+            dictTools.getParallelDictValues(self.points[self.setIndex][self.point]['values'],self.points[self.setIndex][self.point]['values'],valValues)
+            actStr = ''
+            valKeys = []
+            dictTools.getDictKeyString(self.points[self.setIndex][self.point]['values'],actStr,valKeys)
+            validationDetails = '\n'.join([f'{valKeys[i]}: {str(valValues[i])}' for i in range(len(valValues))])
+        except KeyError:
+            validationDetails = ''
+        details = (
+                    'Calculated State:\n'
+                  +f'Temperature: {self.points[self.setIndex][self.point]["state"][0]:6.2f} K\n'
+                  +f'Pressure: {self.points[self.setIndex][self.point]["state"][1]:6.2f} atm\n'
+                  +elementDetails
+                  +'\nValidation Data:\n'
+                  +validationDetails
+                 )
+        self.sgw['-details-'].update(details)
 
 class DatabaseWindow:
     def __init__(self,parent):
