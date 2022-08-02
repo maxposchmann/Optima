@@ -19,6 +19,10 @@ class transitionFinder:
 
         # Check targetTemperature +/- tempRange (in tunit)
         self.tempRange = 30
+        # Temperature step to start with
+        self.tstart    = 0.001
+        # Composition step to start with
+        self.cstart    = 0.001
 
         # Minimum allowed concentration of included component
         # Should be > 0 to avoid deleting relevant phases
@@ -89,8 +93,8 @@ class transitionFinder:
         self.tagNames = ['temperature']
         self.tagNames.extend(self.targetComposition.keys())
         self.tags = dict([(self.tagNames[i], [0,0]) for i in range(len(self.tagNames))])
-        self.tags['temperature'][0] = self.targetTemperature * 0.999
-        self.tags['temperature'][1] = self.targetTemperature * 1.001
+        self.tags['temperature'][0] = self.targetTemperature * (1 - self.tstart)
+        self.tags['temperature'][1] = self.targetTemperature * (1 - self.tstart)
 
         # Normalize compositions
         self.totalMass = 0
@@ -98,8 +102,8 @@ class transitionFinder:
             self.totalMass += self.targetComposition[element]
         for element in self.targetComposition.keys():
             self.targetComposition[element] = self.targetComposition[element] / self.totalMass
-            self.tags[element][0] = self.targetComposition[element] * 0.999
-            self.tags[element][1] = self.targetComposition[element] * 1.001
+            self.tags[element][0] = self.targetComposition[element] * (1 - self.cstart)
+            self.tags[element][1] = self.targetComposition[element] * (1 - self.cstart)
 
         # Set bounds for values
         self.extraParams = {}
