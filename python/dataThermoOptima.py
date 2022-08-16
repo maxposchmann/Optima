@@ -393,7 +393,7 @@ class MixtureValidationWindow:
             newpoints[str(startIndex)]["values"] = [[]]
             for i in range(self.npoints):
                 conc, cstat = validEntry(values[f'-mixture-{i}-'])
-                valu, vstat = validEntry(values[f'-mixValue-{i}-'])
+                valu, vstat = validEntry(values[f'-mixValue-{i}-'],checkSign=False)
                 if cstat == 0 and vstat == 0 and conc >= 0 and conc <= 1:
                     newpoints[str(startIndex)]["mixtures"].append(conc)
                     newpoints[str(startIndex)]["values"][0].append(valu)
@@ -402,16 +402,15 @@ class MixtureValidationWindow:
             self.points.append(newpoints)
             self.close()
 
-def validEntry(value):
+def validEntry(value,checkSign=True):
     if value == '':
         outValue = 0
         status = 1
     else:
         try:
             outValue = float(value)
-            if outValue >= 0:
-                status = 0
-            else:
+            status = 0
+            if checkSign and outValue < 0:
                 raise ValueError
         except ValueError:
             print(f'Invalid entry {value}')
