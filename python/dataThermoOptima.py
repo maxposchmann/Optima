@@ -260,7 +260,7 @@ class ReferenceValueWindow:
             elif values[event] == 'solution phases':
                 resetFromRow()
                 self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['solution phases'].keys()))
-                self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles','driving force','species','sublattices','elements'])
+                self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['moles','driving force','species','sublattices','elements','endmembers'])
             elif values[event] == 'pure condensed phases':
                 resetFromRow()
                 self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=self.parent.phaseData['pure condensed phases'])
@@ -269,6 +269,10 @@ class ReferenceValueWindow:
                 resetFromRow()
                 self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['solution phases'][values[f'-type-{ind}-{1}-']]['species']))
                 self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['mole fraction','moles','chemical potential'])
+            elif values[event] == 'endmembers':
+                resetFromRow()
+                self.sgw[f'-type-{ind}-{row+1}-'].update(value='', values=list(self.parent.phaseData['solution phases'][values[f'-type-{ind}-{1}-']]['endmembers']))
+                self.sgw[f'-type-{ind}-{row+2}-'].update(value='', values=['mole fraction'])
             elif row == 0:
                 resetFromRow()
 
