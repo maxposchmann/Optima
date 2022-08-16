@@ -88,6 +88,9 @@ class TagWindow:
                 return
         elif event == '-tagList-':
             self.tag = values['-tagList-'][0]
+            self.sgw['-in1-'].update('')
+            self.sgw['-in2-'].update('')
+            self.sgw['-scale-'].update('')
             self.updateDetails()
         elif event =='Reset to Defaults':
             self.tags[self.tag]['initial'] = [0,0]
