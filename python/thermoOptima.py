@@ -382,14 +382,16 @@ class ThermochimicaOptima:
         scale = np.array(scale)
 
         # Call Optima
-        self.method(y,
-                    intertags,
-                    getValues,
-                    self.maxIts,
-                    self.tol,
-                    weight = weight,
-                    scale = scale,
-                    **self.extraParams)
+        norm, iterations, beta = self.method(y,
+                                 intertags,
+                                 getValues,
+                                 self.maxIts,
+                                 self.tol,
+                                 weight = weight,
+                                 scale = scale,
+                                 **self.extraParams)
+        print(f'Best norm: {norm}')
+        print(f'With beta: {beta}')
     def saveValidation(self, filename):
         if len(self.validationPoints) == 0:
             print('Cannot save empty validation set')
