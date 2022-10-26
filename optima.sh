@@ -5,4 +5,6 @@ make -j > make.out
 make -j > make.out
 cd ..
 
-python3.9 python/thermoOptima.py
+source setPython.sh
+
+$python_for_thermochimica python/thermoOptima.py
