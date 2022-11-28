@@ -7,4 +7,4 @@ cd ..
 
 source setPython.sh
 
-$python_for_thermochimica python/thermoOptima.py
+$python_for_thermochimica python/thermoOptima.py &
