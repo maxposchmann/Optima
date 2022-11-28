@@ -99,8 +99,8 @@ class TagWindow:
             self.updateDetails()
     def updateDetails(self):
         details = (
-                   f'Value 1: {self.tags[self.tag]["initial"][0]:6.2f}\n'
-                  +f'Value 2: {self.tags[self.tag]["initial"][1]:6.2f}\n'
+                   f'Value 1: {self.tags[self.tag]["initial"][0]}\n'
+                  +f'Value 2: {self.tags[self.tag]["initial"][1]}\n'
                   +f'Scale: {self.tags[self.tag]["scale"]}'
                  )
         self.sgw['-details-'].update(details)
