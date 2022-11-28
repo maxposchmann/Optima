@@ -53,7 +53,7 @@ def getPointValidationValues(updateInputFunction, validation, tags, beta, thermo
         if validation[n_val]['type'] == 'point':
             subprocess.run([thermochimica_path + '/bin/RunCalculationList',f'validationPoints-{n_val}.ti'])
 
-            jsonFile = open(thermochimica_path + '/thermoout.json',)
+            jsonFile = open(thermochimica_path + '/outputs/thermoout.json',)
             try:
                 data = json.load(jsonFile)
                 jsonFile.close()
